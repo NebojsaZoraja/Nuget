@@ -13,5 +13,8 @@ namespace NuGet
 
         [XmlAttribute("version")]
         public string Version { get; set; }
+
+        [XmlAttribute("targetFramework")]
+        public string TargetFramework { get; set; }
     }
 }

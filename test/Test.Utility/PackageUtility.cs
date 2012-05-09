@@ -141,10 +141,18 @@ namespace NuGet.Test
                 mockAssemblyReference.Setup(m => m.Path).Returns(fileName);
                 mockAssemblyReference.Setup(m => m.Name).Returns(Path.GetFileName(fileName));
 
-                FrameworkName fn = ParseFrameworkName(fileName);
+
+                string effectivePath;
+                FrameworkName fn = ParseFrameworkName(fileName, out effectivePath);
                 if (fn != null)
                 {
+                    mockAssemblyReference.Setup(m => m.EffectivePath).Returns(effectivePath);
+                    mockAssemblyReference.Setup(m => m.TargetFramework).Returns(fn);
                     mockAssemblyReference.Setup(m => m.SupportedFrameworks).Returns(new[] { fn });
+                }
+                else
+                {
+                    mockAssemblyReference.Setup(m => m.EffectivePath).Returns(fileName);
                 }
 
                 assemblyReferences.Add(mockAssemblyReference.Object);
@@ -152,14 +160,15 @@ namespace NuGet.Test
             return assemblyReferences;
         }
 
-        private static FrameworkName ParseFrameworkName(string fileName)
+        private static FrameworkName ParseFrameworkName(string fileName, out string effectivePath)
         {
             if (fileName.StartsWith("lib\\"))
             {
                 fileName = fileName.Substring(4);
-                return VersionUtility.ParseFrameworkFolderName(fileName);
+                return VersionUtility.ParseFrameworkFolderName(fileName, strictParsing: false, effectivePath: out effectivePath);
             }
 
+            effectivePath = fileName;
             return null;
         }
 
@@ -183,6 +192,14 @@ namespace NuGet.Test
                 var mockFile = new Mock<IPackageFile>();
                 mockFile.Setup(m => m.Path).Returns(path);
                 mockFile.Setup(m => m.GetStream()).Returns(() => new MemoryStream(Encoding.Default.GetBytes(path)));
+
+                string effectivePath;
+                FrameworkName fn = VersionUtility.ParseFrameworkNameFromFilePath(path, out effectivePath);
+                mockFile.Setup(m => m.TargetFramework).Returns(fn);
+                mockFile.Setup(m => m.EffectivePath).Returns(effectivePath);
+                mockFile.Setup(m => m.SupportedFrameworks).Returns(
+                    fn == null ? new FrameworkName[0] : new FrameworkName[] { fn });
+
                 files.Add(mockFile.Object);
             }
             return files;

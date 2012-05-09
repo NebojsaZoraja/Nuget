@@ -451,7 +451,51 @@ namespace NuGet
             return name + "-" + profile;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "1#")]
+        public static FrameworkName ParseFrameworkNameFromFilePath(string filePath, out string effectivePath)
+        {
+            string[] knownFolders = new string[] 
+            { 
+                Constants.ContentDirectory,
+                Constants.LibDirectory,
+                Constants.ToolsDirectory
+            };
+
+            for (int i = 0; i < knownFolders.Length; i++)
+            {
+                string folderPrefix = knownFolders[i] + System.IO.Path.DirectorySeparatorChar;
+                if (filePath.Length > folderPrefix.Length &&
+                    filePath.StartsWith(folderPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    return VersionUtility.ParseFrameworkFolderName(
+                        filePath.Substring(folderPrefix.Length),
+                        strictParsing: knownFolders[i] != Constants.LibDirectory,
+                        effectivePath: out effectivePath);
+                }
+            }
+
+            effectivePath = filePath;
+            return null;
+        }
+
         public static FrameworkName ParseFrameworkFolderName(string path)
+        {
+            string effectivePath;
+            return ParseFrameworkFolderName(path, strictParsing: false, effectivePath: out effectivePath);
+        }
+
+        /// <summary>
+        /// Parses the specified string into FrameworkName object.
+        /// </summary>
+        /// <param name="path">The string to be parse.</param>
+        /// <param name="strictParsing">if set to <c>true</c> requires the given path to be surrounded [].</param>
+        /// <remarks>
+        /// Starting from 2.0, we require framework folders for Content and Tools to be surrounded by [].
+        /// To avoid breaking existing packages, we exempt Lib assemblies from this rule.
+        /// </remarks>
+        /// <returns></returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "2#")]
+        public static FrameworkName ParseFrameworkFolderName(string path, bool strictParsing, out string effectivePath)
         {
             // The path for a reference might look like this for assembly foo.dll:            
             // foo.dll
@@ -462,6 +506,27 @@ namespace NuGet
 
             // Get the target framework string if specified
             string targetFrameworkString = Path.GetDirectoryName(path).Split(Path.DirectorySeparatorChar).FirstOrDefault();
+
+            effectivePath = path;
+
+            if (targetFrameworkString.Length > 2 &&
+                targetFrameworkString[0] == '[' &&
+                targetFrameworkString[targetFrameworkString.Length-1] == ']')
+            {
+                // skip past the framework folder and the character \
+                effectivePath = path.Substring(targetFrameworkString.Length + 1);
+                targetFrameworkString = targetFrameworkString.Substring(1, targetFrameworkString.Length - 2);
+            }
+            else if (strictParsing)
+            {
+                // with strict parsing, the framework string must be surrounded by [ ].
+                return null;
+            }
+            else if (!String.IsNullOrEmpty(targetFrameworkString))
+            {
+                // skip past the framework folder and the character \
+                effectivePath = path.Substring(targetFrameworkString.Length + 1);
+            }
 
             if (!String.IsNullOrEmpty(targetFrameworkString))
             {

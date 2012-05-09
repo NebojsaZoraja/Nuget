@@ -25,10 +25,17 @@ namespace NuGet
         /// </summary>
         internal const string SchemaVersionV3 = "http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd";
 
+        /// <summary>
+        /// Added 'targetFramework' attribute for 'dependency' elements.
+        /// Allow framework folders under 'content' and 'tools' folders. 
+        /// </summary>
+        internal const string SchemaVersionV4 = "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd";
+
         private static readonly string[] VersionToSchemaMappings = new[] {
             SchemaVersionV1,
             SchemaVersionV2,
             SchemaVersionV3,
+            SchemaVersionV4
         };
 
         // Mapping from schema to resource name
@@ -36,6 +43,7 @@ namespace NuGet
             { SchemaVersionV1, "NuGet.Authoring.nuspec.xsd" },
             { SchemaVersionV2, "NuGet.Authoring.nuspec.xsd" },
             { SchemaVersionV3, "NuGet.Authoring.nuspec.xsd" },
+            { SchemaVersionV4, "NuGet.Authoring.nuspec.xsd" },
         };
 
         private static readonly ConcurrentDictionary<string, string> _schemaCache = new ConcurrentDictionary<string, string>(

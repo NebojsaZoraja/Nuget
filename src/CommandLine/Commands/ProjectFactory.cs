@@ -701,17 +701,35 @@ namespace NuGet.Commands
         private class ReverseTransformFormFile : IPackageFile
         {
             private readonly Lazy<Func<Stream>> _streamFactory;
+            private readonly string _effectivePath;
 
             public ReverseTransformFormFile(IPackageFile file, IEnumerable<IPackageFile> transforms)
             {
                 Path = file.Path + ".transform";
                 _streamFactory = new Lazy<Func<Stream>>(() => ReverseTransform(file, transforms), isThreadSafe: false);
+                TargetFramework = VersionUtility.ParseFrameworkNameFromFilePath(Path, out _effectivePath);
+            }
+
+            public bool IsEmpty
+            {
+                get
+                {
+                    return false;
+                }
             }
 
             public string Path
             {
                 get;
                 private set;
+            }
+
+            public string EffectivePath
+            {
+                get
+                {
+                    return _effectivePath;
+                }
             }
 
             public Stream GetStream()
@@ -743,6 +761,25 @@ namespace NuGet.Commands
                 using (Stream stream = file.GetStream())
                 {
                     return XElement.Load(stream);
+                }
+            }
+
+
+            public FrameworkName TargetFramework
+            {
+                get;
+                private set;
+            }
+
+            IEnumerable<FrameworkName> IFrameworkTargetable.SupportedFrameworks
+            {
+                get
+                {
+                    if (TargetFramework != null)
+                    {
+                        yield return TargetFramework;
+                    }
+                    yield break;
                 }
             }
         }

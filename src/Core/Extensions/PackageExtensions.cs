@@ -45,6 +45,11 @@ namespace NuGet
             return package.GetFiles(Constants.ContentDirectory);
         }
 
+        public static IEnumerable<IPackageFile> GetPowerShellScripts(this IPackage package)
+        {
+            return package.GetFiles(Constants.ToolsDirectory);
+        }
+
         public static IEnumerable<IPackageFile> GetLibFiles(this IPackage package)
         {
             return package.GetFiles(Constants.LibDirectory);
@@ -117,10 +122,37 @@ namespace NuGet
 
         public static IEnumerable<FrameworkName> GetSupportedFrameworks(this IPackage package)
         {
+            // The supported frameworks of a package is the union of the supported frameworks
+            // of Content/Lib/Tools folders and those of Framework Assemblies.
             return package.FrameworkAssemblies
                           .SelectMany(a => a.SupportedFrameworks)
-                          .Concat(package.AssemblyReferences.SelectMany(a => a.SupportedFrameworks))
+                          .Concat(package.GetFiles().SelectMany(a => a.SupportedFrameworks))
                           .Distinct();
+        }
+
+        // the returned scriptPath is relative to the package
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "3#")]
+        public static bool FindCompatiblePowerShellScript(
+            this IPackage package,
+            string scriptName,
+            FrameworkName targetFramework,
+            out string scriptPath)
+        {
+            // this is the case for either install.ps1 or uninstall.ps1
+            // search for the correct script according to target framework of the project
+            IEnumerable<IPackageFile> targetScripts;
+            if (VersionUtility.TryGetCompatibleItems(targetFramework, package.GetPowerShellScripts(), out targetScripts))
+            {
+                IPackageFile selectedScript = targetScripts.FirstOrDefault(p => p.EffectivePath.Equals(scriptName, StringComparison.OrdinalIgnoreCase));
+                if (selectedScript != null && !selectedScript.IsEmpty)
+                {
+                    scriptPath = selectedScript.Path;
+                    return true;
+                }
+            }
+
+            scriptPath = null;
+            return false;
         }
 
         /// <summary>

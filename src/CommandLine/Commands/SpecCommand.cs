@@ -100,7 +100,7 @@ namespace NuGet.Commands
                 {
                     using (var stream = new MemoryStream())
                     {
-                        manifest.Save(stream, validate: false);
+                        manifest.Save(stream, validate: false, minimumManifestVersion: 1);
                         stream.Seek(0, SeekOrigin.Begin);
                         string content = stream.ReadToEnd();
                         File.WriteAllText(nuspecFile, RemoveSchemaNamespace(content));

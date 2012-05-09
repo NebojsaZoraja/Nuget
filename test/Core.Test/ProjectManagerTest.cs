@@ -8,7 +8,6 @@ using Xunit;
 
 namespace NuGet.Test
 {
-
     public class ProjectManagerTest
     {
         [Fact]
@@ -425,6 +424,7 @@ namespace NuGet.Test
             package.Setup(m => m.Listed).Returns(true);
             var file = new Mock<IPackageFile>();
             file.Setup(m => m.Path).Returns(@"content\web.config.transform");
+            file.Setup(m => m.EffectivePath).Returns("web.config.transform");
             file.Setup(m => m.GetStream()).Returns(() =>
 @"<configuration>
     <configSections>
@@ -469,6 +469,7 @@ namespace NuGet.Test
             package.Setup(m => m.Version).Returns(new SemanticVersion("1.0"));
             var file = new Mock<IPackageFile>();
             file.Setup(m => m.Path).Returns(@"content\web.config.transform");
+            file.Setup(m => m.EffectivePath).Returns("web.config.transform");
             file.Setup(m => m.GetStream()).Returns(() =>
 @"<configuration>
     <system.web>
@@ -509,7 +510,9 @@ namespace NuGet.Test
             var contentFile = new Mock<IPackageFile>();
             contentFile.Setup(m => m.Path).Returns(@"content\foo.txt");
             contentFile.Setup(m => m.GetStream()).Returns(new MemoryStream());
+            contentFile.Setup(m => m.EffectivePath).Returns("foo.txt");
             file.Setup(m => m.Path).Returns(@"content\web.config.transform");
+            file.Setup(m => m.EffectivePath).Returns("web.config.transform");
             file.Setup(m => m.GetStream()).Returns(() =>
 @"<configuration>
     <system.web>
@@ -542,6 +545,7 @@ namespace NuGet.Test
             package.Setup(m => m.Version).Returns(new SemanticVersion("1.0"));
             var file = new Mock<IPackageFile>();
             file.Setup(m => m.Path).Returns(@"content\web.config.transform");
+            file.Setup(m => m.EffectivePath).Returns("web.config.transform");
             file.Setup(m => m.GetStream()).Returns(() =>
 @"<configuration>
     <system.web>
@@ -826,7 +830,7 @@ namespace NuGet.Test
         }
 
         [Fact]
-        public void UpdateDependencyDependentsHaveSatisfyableDependencies()
+        public void UpdateDependencyDependentsHaveSatisfiableDependencies()
         {
             // Arrange
             var sourceRepository = new MockPackageRepository();
@@ -920,7 +924,7 @@ namespace NuGet.Test
         }
 
         [Fact]
-        public void UpdatePackageReferenceWithSatisfyableDependencies()
+        public void UpdatePackageReferenceWithSatisfiableDependencies()
         {
             // Arrange
             var sourceRepository = new MockPackageRepository();
@@ -1443,6 +1447,175 @@ namespace NuGet.Test
             projectManager.AddPackageReference("A");
             Assert.True(localRepository.Exists(mockPackage.Object));
         }
+
+        [Fact]
+        public void AddPackageReferenceAddsContentAccordingToTargetFramework1()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        new[] { "[net20]\\contentFile", "[net35]\\jQuery.js", "foo.css" },
+                                                        new[] { "reference.dll" });
+
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.Equal(1, projectSystem.Paths.Count);
+            Assert.True(projectSystem.FileExists(@"contentFile"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceAddsContentAccordingToTargetFramework2()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        new[] { "[sl3]\\contentFile", "[winrt45]\\jQuery.js", "sub\\foo.css" },
+                                                        new[] { "reference.dll" });
+
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.Equal(1, projectSystem.Paths.Count);
+            Assert.True(projectSystem.FileExists(@"sub\foo.css"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceAddsContentAccordingToTargetFramework3()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        new[] { "[sl3]\\contentFile", "[winrt45]\\jQuery.js" },
+                                                        new[] { "reference.dll" });
+
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.Equal(0, projectSystem.Paths.Count);
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceAddsContentAccordingToTargetFramework4()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.5")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        new[] { "[net20]\\contentFile", "[net35]\\jQuery.js", "foo.css" },
+                                                        new[] { "reference.dll" });
+
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.Equal(1, projectSystem.Paths.Count);
+            Assert.True(projectSystem.FileExists(@"contentFile"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceAddsTransformContentAccordingToTargetFramework()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        new[] { "[net20]\\contentFile", "[net35]\\sub\\jQuery.js", "[net35]\\style.css.pp", "foo.css" },
+                                                        new[] { "reference.dll" });
+
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.Equal(2, projectSystem.Paths.Count);
+            Assert.True(projectSystem.FileExists(@"sub\jQuery.js"));
+            Assert.True(projectSystem.FileExists(@"style.css"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void RemovePackageReferenceRemoveContentAccordingToTargetFramework()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
+            projectSystem.AddFile("jQuery.js", "content\\[net35]\\jQuery.js");
+            projectSystem.AddFile("foo.css", "content\\foo.css");
+
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        new[] { "[net20]\\contentFile", "[net35]\\jQuery.js", "foo.css" },
+                                                        new[] { "reference.dll" });
+            mockRepository.AddPackage(packageA);
+            projectManager.AddPackageReference("A");
+            Assert.True(projectSystem.FileExists(@"contentFile"));
+
+            // Act
+            projectManager.RemovePackageReference("A");
+
+            // Assert
+            Assert.Equal(2, projectSystem.Paths.Count);
+            Assert.True(projectSystem.FileExists(@"jQuery.js"));
+            Assert.True(projectSystem.FileExists(@"foo.css"));
+            Assert.False(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceAddsAssemblyReferencesUsingNewFolderConvention()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        new[] { "contentFiles" },
+                                                        new[] { "lib\\[net35]\\reference.dll", "lib\\[net45]\\bar.dll" });
+
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.Equal(1, projectSystem.References.Count);
+            Assert.True(projectSystem.References.ContainsKey(@"reference.dll"));
+            Assert.False(projectSystem.References.ContainsKey(@"bar.dll"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+
 
         private ProjectManager CreateProjectManager()
         {

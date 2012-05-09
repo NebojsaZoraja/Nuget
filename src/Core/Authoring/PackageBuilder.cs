@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Packaging;
 using System.Linq;
+using System.Text.RegularExpressions;
 using NuGet.Resources;
 
 namespace NuGet
@@ -234,10 +235,15 @@ namespace NuGet
             ValidateDependencies(Version, Dependencies);
             ValidateReferenceAssemblies(Files, PackageAssemblyReferences);
 
+            bool hasTargetFxForContentOrFiles = HasTargetFrameworkFolderForContentOrToolFiles(Files);
+
             using (Package package = Package.Open(stream, FileMode.Create))
             {
                 // Validate and write the manifest
-                WriteManifest(package);
+                WriteManifest(package, 
+                    hasTargetFxForContentOrFiles ? 
+                        ManifestVersionUtility.TargetFrameworkSupportVersion : 
+                        ManifestVersionUtility.DefaultVersion);
 
                 // Write the files to the package
                 WriteFiles(package);
@@ -250,6 +256,24 @@ namespace NuGet
                 package.PackageProperties.Language = Language;
                 package.PackageProperties.Keywords = ((IPackageMetadata)this).Tags;
             }
+        }
+
+        private static bool HasTargetFrameworkFolderForContentOrToolFiles(ICollection<IPackageFile> files)
+        {
+            // check if any file under Content or Tools has TargetFramework defined
+            bool hasContentOrTool = files.Any(
+                f => f.TargetFramework != null &&
+                     (f.Path.StartsWith(Constants.ContentDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ||
+                      f.Path.StartsWith(Constants.ToolsDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)));
+
+            if (hasContentOrTool)
+            {
+                return true;
+            }
+
+            // now check if any file under Lib use the new format for framework folder, e.g. [net45]
+            return files.Any(
+                f => f.TargetFramework != null && Regex.IsMatch(f.Path, @"^lib\\\[.*?\]\\.+$", RegexOptions.IgnoreCase));
         }
 
         internal static void ValidateDependencies(SemanticVersion version, IEnumerable<PackageDependency> dependencies)
@@ -346,7 +370,7 @@ namespace NuGet
             }
         }
 
-        private void WriteManifest(Package package)
+        private void WriteManifest(Package package, int minimumManifestVersion)
         {
             Uri uri = UriUtility.CreatePartUri(Id + Constants.ManifestExtension);
 
@@ -359,7 +383,7 @@ namespace NuGet
             using (Stream stream = packagePart.GetStream())
             {
                 Manifest manifest = Manifest.Create(this);
-                manifest.Save(stream);
+                manifest.Save(stream, minimumManifestVersion);
             }
         }
 

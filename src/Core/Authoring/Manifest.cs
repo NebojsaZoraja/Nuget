@@ -38,10 +38,15 @@ namespace NuGet
 
         public void Save(Stream stream)
         {
-            Save(stream, validate: true);
+            Save(stream, validate: true, minimumManifestVersion: 1);
         }
 
-        public void Save(Stream stream, bool validate)
+        public void Save(Stream stream, int minimumManifestVersion)
+        {
+            Save(stream, validate: true, minimumManifestVersion: minimumManifestVersion);
+        }
+
+        public void Save(Stream stream, bool validate, int minimumManifestVersion)
         {
             if (validate)
             {
@@ -49,7 +54,7 @@ namespace NuGet
                 Validate(this);
             }
 
-            int version = ManifestVersionUtility.GetManifestVersion(Metadata);
+            int version = Math.Max(minimumManifestVersion, ManifestVersionUtility.GetManifestVersion(Metadata));
             string schemaNamespace = ManifestSchemaUtility.GetSchemaNamespace(version);
 
             // Define the namespaces to use when serializing
@@ -149,6 +154,11 @@ namespace NuGet
                     select new ManifestReference { File = reference.SafeTrim() }).ToList();
         }
 
+        /// <summary>
+        /// Creates the dependencies.
+        /// </summary>
+        /// <param name="metadata">The metadata.</param>
+        /// <returns></returns>
         private static List<ManifestDependency> CreateDependencies(IPackageMetadata metadata)
         {
             if (metadata.Dependencies.IsEmpty())
@@ -160,7 +170,10 @@ namespace NuGet
                     select new ManifestDependency
                     {
                         Id = dependency.Id.SafeTrim(),
-                        Version = dependency.VersionSpec.ToStringSafe()
+                        Version = dependency.VersionSpec.ToStringSafe(),
+                        TargetFramework = dependency.SupportedFrameworks != null ? 
+                                            String.Join(", ", dependency.SupportedFrameworks) : 
+                                            null
                     }).ToList();
         }
 
