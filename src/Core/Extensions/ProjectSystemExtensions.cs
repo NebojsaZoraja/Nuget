@@ -38,7 +38,7 @@ namespace NuGet
 
                 foreach (IPackageFile file in fileList)
                 {
-                    if (file.IsEmpty)
+                    if (file.IsEmptyFolder())
                     {
                         continue;
                     }
@@ -114,7 +114,7 @@ namespace NuGet
 
                     foreach (var file in directoryFiles)
                     {
-                        if (file.IsEmpty)
+                        if (file.IsEmptyFolder())
                         {
                             continue;
                         }

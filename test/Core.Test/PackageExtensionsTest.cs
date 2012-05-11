@@ -107,7 +107,7 @@ namespace NuGet.Test
 
             // Act
             string scriptPath;
-            bool result = package.FindCompatiblePowerShellScript(scriptName, targetFramework, out scriptPath);
+            bool result = package.FindCompatibleToolFiles(scriptName, targetFramework, out scriptPath);
 
             // Assert
             Assert.True(result);
@@ -126,7 +126,7 @@ namespace NuGet.Test
 
             // Act
             string scriptPath;
-            bool result = package.FindCompatiblePowerShellScript(scriptName, targetFramework, out scriptPath);
+            bool result = package.FindCompatibleToolFiles(scriptName, targetFramework, out scriptPath);
 
             // Assert
             Assert.False(result);
@@ -143,7 +143,7 @@ namespace NuGet.Test
 
             // Act
             string scriptPath;
-            bool result = package.FindCompatiblePowerShellScript("install.ps1", targetFramework, out scriptPath);
+            bool result = package.FindCompatibleToolFiles("install.ps1", targetFramework, out scriptPath);
 
             // Assert
             Assert.True(result);
@@ -161,7 +161,7 @@ namespace NuGet.Test
 
             // Act
             string scriptPath;
-            bool result = package.FindCompatiblePowerShellScript("install.ps1", targetFramework, out scriptPath);
+            bool result = package.FindCompatibleToolFiles("install.ps1", targetFramework, out scriptPath);
 
             // Assert
             Assert.False(result);

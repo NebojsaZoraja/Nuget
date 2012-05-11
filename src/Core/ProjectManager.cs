@@ -251,7 +251,7 @@ namespace NuGet
                 // Add the references to the reference path
                 foreach (IPackageAssemblyReference assemblyReference in assemblyReferences)
                 {
-                    if (assemblyReference.IsEmpty)
+                    if (assemblyReference.IsEmptyFolder())
                     {
                         continue;
                     }
@@ -534,7 +534,11 @@ namespace NuGet
 
             public bool Equals(IPackageFile x, IPackageFile y)
             {
-                return x.EffectivePath.Equals(y.EffectivePath, StringComparison.OrdinalIgnoreCase);
+                // technically, this check will fail if, for example, 'x' is a content file and 'y' is a lib file.
+                // However, because we only use this comparer to compare files within the same folder type, 
+                // this check is sufficient.
+                return x.TargetFramework == y.TargetFramework &&
+                       x.EffectivePath.Equals(y.EffectivePath, StringComparison.OrdinalIgnoreCase);
             }
 
             public int GetHashCode(IPackageFile obj)

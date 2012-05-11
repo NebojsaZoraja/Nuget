@@ -270,7 +270,7 @@ namespace NuGet.PowerShell.Commands
             else
             {
                 string scriptPath;
-                if (package.FindCompatiblePowerShellScript(scriptFileName, project.GetTargetFrameworkName(), out scriptPath))
+                if (package.FindCompatibleToolFiles(scriptFileName, project.GetTargetFrameworkName(), out scriptPath))
                 {
                     fullPath = Path.Combine(rootPath, scriptPath);
                 }

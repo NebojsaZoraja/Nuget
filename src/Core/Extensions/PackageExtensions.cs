@@ -25,6 +25,11 @@ namespace NuGet
             return package.Listed || package.Published > Constants.Unpublished;
         }
 
+        public static bool IsEmptyFolder(this IPackageFile packageFile)
+        {
+            return packageFile != null && packageFile.EffectivePath == Constants.PackageEmptyFileName;
+        }
+
         public static IEnumerable<IPackage> FindByVersion(this IEnumerable<IPackage> source, IVersionSpec versionSpec)
         {
             if (versionSpec == null)
@@ -45,7 +50,7 @@ namespace NuGet
             return package.GetFiles(Constants.ContentDirectory);
         }
 
-        public static IEnumerable<IPackageFile> GetPowerShellScripts(this IPackage package)
+        public static IEnumerable<IPackageFile> GetToolFiles(this IPackage package)
         {
             return package.GetFiles(Constants.ToolsDirectory);
         }
@@ -132,26 +137,26 @@ namespace NuGet
 
         // the returned scriptPath is relative to the package
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "3#")]
-        public static bool FindCompatiblePowerShellScript(
+        public static bool FindCompatibleToolFiles(
             this IPackage package,
             string scriptName,
             FrameworkName targetFramework,
-            out string scriptPath)
+            out string toolFilePath)
         {
             // this is the case for either install.ps1 or uninstall.ps1
             // search for the correct script according to target framework of the project
-            IEnumerable<IPackageFile> targetScripts;
-            if (VersionUtility.TryGetCompatibleItems(targetFramework, package.GetPowerShellScripts(), out targetScripts))
+            IEnumerable<IPackageFile> toolFiles;
+            if (VersionUtility.TryGetCompatibleItems(targetFramework, package.GetToolFiles(), out toolFiles))
             {
-                IPackageFile selectedScript = targetScripts.FirstOrDefault(p => p.EffectivePath.Equals(scriptName, StringComparison.OrdinalIgnoreCase));
-                if (selectedScript != null && !selectedScript.IsEmpty)
+                IPackageFile foundToolFile = toolFiles.FirstOrDefault(p => p.EffectivePath.Equals(scriptName, StringComparison.OrdinalIgnoreCase));
+                if (foundToolFile != null && !foundToolFile.IsEmptyFolder())
                 {
-                    scriptPath = selectedScript.Path;
+                    toolFilePath = foundToolFile.Path;
                     return true;
                 }
             }
 
-            scriptPath = null;
+            toolFilePath = null;
             return false;
         }
 
