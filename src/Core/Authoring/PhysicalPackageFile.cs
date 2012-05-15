@@ -20,12 +20,6 @@ namespace NuGet
             _streamFactory = streamFactory;
         }
 
-        public bool IsEmpty
-        {
-            // TO FIX
-            get { return false; }
-        }
-
         /// <summary>
         /// Path on disk
         /// </summary>

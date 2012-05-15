@@ -20,9 +20,9 @@ namespace NuGet
         private const string GreaterThanOrEqualTo = "\u2265";
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Microsoft.Security", 
+            "Microsoft.Security",
             "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes",
-            Justification="The type FrameworkName is immutable.")]
+            Justification = "The type FrameworkName is immutable.")]
         public static readonly FrameworkName UnsupportedFrameworkName = new FrameworkName("Unsupported", new Version());
         private static readonly Version _emptyVersion = new Version();
 
@@ -454,7 +454,7 @@ namespace NuGet
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "1#")]
         public static FrameworkName ParseFrameworkNameFromFilePath(string filePath, out string effectivePath)
         {
-            string[] knownFolders = new string[] 
+            var knownFolders = new string[] 
             { 
                 Constants.ContentDirectory,
                 Constants.LibDirectory,
@@ -505,13 +505,13 @@ namespace NuGet
             // {FrameworkName}{Version}\sub1\sub2\foo.dll
 
             // Get the target framework string if specified
-            string targetFrameworkString = Path.GetDirectoryName(path).Split(Path.DirectorySeparatorChar).FirstOrDefault();
+            string targetFrameworkString = Path.GetDirectoryName(path).Split(Path.DirectorySeparatorChar).First();
 
             effectivePath = path;
 
             if (targetFrameworkString.Length > 2 &&
                 targetFrameworkString[0] == '[' &&
-                targetFrameworkString[targetFrameworkString.Length-1] == ']')
+                targetFrameworkString[targetFrameworkString.Length - 1] == ']')
             {
                 // skip past the framework folder and the character \
                 effectivePath = path.Substring(targetFrameworkString.Length + 1);
@@ -552,7 +552,7 @@ namespace NuGet
             // item -> [Framework1, Framework2, Framework3] into
             // [{item, Framework1}, {item, Framework2}, {item, Framework3}]
             var normalizedItems = from item in items
-                                  let frameworks = item.SupportedFrameworks.Any() ? item.SupportedFrameworks : new FrameworkName[] { null }
+                                  let frameworks = (item.SupportedFrameworks != null && item.SupportedFrameworks.Any()) ? item.SupportedFrameworks : new FrameworkName[] { null }
                                   from framework in frameworks
                                   select new
                                   {

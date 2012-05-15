@@ -27,7 +27,7 @@ namespace NuGet
 
         public static bool IsEmptyFolder(this IPackageFile packageFile)
         {
-            return packageFile != null && packageFile.EffectivePath == Constants.PackageEmptyFileName;
+            return packageFile != null && Path.GetFileName(packageFile.Path) == Constants.PackageEmptyFileName;
         }
 
         public static IEnumerable<IPackage> FindByVersion(this IEnumerable<IPackage> source, IVersionSpec versionSpec)

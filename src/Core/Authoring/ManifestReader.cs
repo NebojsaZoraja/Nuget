@@ -139,7 +139,8 @@ namespace NuGet
                     select new ManifestDependency
                     {
                         Id = element.GetOptionalAttributeValue("id").SafeTrim(),
-                        Version = element.GetOptionalAttributeValue("version").SafeTrim()
+                        Version = element.GetOptionalAttributeValue("version").SafeTrim(),
+                        TargetFramework = element.GetOptionalAttributeValue("targetFramework").SafeTrim()
                     }).ToList();
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.Versioning;
 using NuGet.Resources;
 
 namespace NuGet
@@ -10,10 +11,25 @@ namespace NuGet
     public abstract class PackageWalker
     {
         private readonly Dictionary<IPackage, PackageWalkInfo> _packageLookup = new Dictionary<IPackage, PackageWalkInfo>();
+        private readonly FrameworkName _targetFramework;
 
         protected PackageWalker()
+            : this(targetFramework: null)
         {
+        }
+
+        protected PackageWalker(FrameworkName targetFramework)
+        {
+            _targetFramework = targetFramework;
             Marker = new PackageMarker();
+        }
+
+        protected FrameworkName TargetFramework
+        {
+            get
+            {
+                return _targetFramework;
+            }
         }
 
         protected virtual bool RaiseErrorOnCycle
@@ -78,7 +94,8 @@ namespace NuGet
 
             if (!IgnoreDependencies)
             {
-                foreach (var dependency in package.Dependencies)
+                IEnumerable<PackageDependency> filteredDependencies = GetFilteredPackageDependencies(package.Dependencies);
+                foreach (var dependency in filteredDependencies)
                 {
                     // Try to resolve the dependency from the visited packages first
                     IPackage resolvedDependency = Marker.ResolveDependency(dependency, AllowPrereleaseVersions, preferListedPackages: false) ??
@@ -139,6 +156,29 @@ namespace NuGet
             ProcessPackageTarget(package);
 
             OnAfterPackageWalk(package);
+        }
+
+        /// <summary>
+        /// Get the dependencies based on the target framework.
+        /// </summary>
+        /// <param name="package">All dependencies before being filtered.</param>
+        private IEnumerable<PackageDependency> GetFilteredPackageDependencies(IEnumerable<PackageDependency> dependencies)
+        {
+            IEnumerable<PackageDependency> filteredDependencies = null;
+            if (TargetFramework != null)
+            {
+                if (!VersionUtility.TryGetCompatibleItems(TargetFramework, dependencies, out filteredDependencies))
+                {
+                    filteredDependencies = new PackageDependency[0];
+                }
+            }
+            else
+            {
+                // if there is no target framework, return all dependencies
+                filteredDependencies = dependencies;
+            }
+
+            return filteredDependencies;
         }
 
         /// <summary>

@@ -186,15 +186,6 @@ namespace NuGet.VisualStudio
                 _targetFramework = VersionUtility.ParseFrameworkFolderName(pathExcludeLib, strictParsing: false, effectivePath: out _effectivePath);
             }
 
-            public bool IsEmpty
-            {
-                get
-                {
-                    // TO FIX
-                    return false;
-                }
-            }
-
             public FrameworkName TargetFramework
             {
                 get { return _targetFramework; }

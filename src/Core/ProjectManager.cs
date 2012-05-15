@@ -168,8 +168,9 @@ namespace NuGet
         {
             Execute(package, new UpdateWalker(LocalRepository,
                                               SourceRepository,
-                                              new DependentsWalker(LocalRepository),
+                                              new DependentsWalker(LocalRepository, Project.TargetFramework),
                                               ConstraintProvider,
+                                              Project.TargetFramework,
                                               NullLogger.Instance,
                                               !ignoreDependencies,
                                               allowPrereleaseVersions)
@@ -327,7 +328,8 @@ namespace NuGet
         public virtual void RemovePackageReference(IPackage package, bool forceRemove, bool removeDependencies)
         {
             Execute(package, new UninstallWalker(LocalRepository,
-                                                 new DependentsWalker(LocalRepository),
+                                                 new DependentsWalker(LocalRepository, Project.TargetFramework),
+                                                 Project.TargetFramework,
                                                  NullLogger.Instance,
                                                  removeDependencies,
                                                  forceRemove));

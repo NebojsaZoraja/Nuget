@@ -17,9 +17,8 @@ namespace NuGet
 
         internal const string PackageServiceEntitySetName = "Packages";
         internal const string PackageRelationshipNamespace = "http://schemas.microsoft.com/packaging/2010/07/";
-        internal const string PackageEmptyFileContentType = "nuget/empty";
 
-        // Starting from nuget 2.0, we use a file with the speciail name '_._' to represent an empty folder.
+        // Starting from nuget 2.0, we use a file with the special name '_._' to represent an empty folder.
         internal const string PackageEmptyFileName = "_._";
 
         // This is temporary until we fix the gallery to have proper first class support for this.

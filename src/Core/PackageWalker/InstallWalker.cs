@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.Versioning;
 using NuGet.Resources;
 
 namespace NuGet
@@ -13,14 +14,26 @@ namespace NuGet
         private readonly bool _allowPrereleaseVersions;
         private readonly OperationLookup _operations;
 
+        // this ctor is used for unit tests
+        internal InstallWalker(IPackageRepository localRepository,
+                               IPackageRepository sourceRepository,
+                               ILogger logger,
+                               bool ignoreDependencies,
+                               bool allowPrereleaseVersions) 
+            : this(localRepository, sourceRepository, null, logger, ignoreDependencies, allowPrereleaseVersions)
+        {
+        }
+
         public InstallWalker(IPackageRepository localRepository,
                              IPackageRepository sourceRepository,
+                             FrameworkName targetFramework,
                              ILogger logger,
                              bool ignoreDependencies,
                              bool allowPrereleaseVersions) :
             this(localRepository,
                  sourceRepository,
                  constraintProvider: NullConstraintProvider.Instance,
+                 targetFramework: targetFramework,
                  logger: logger,
                  ignoreDependencies: ignoreDependencies,
                  allowPrereleaseVersions: allowPrereleaseVersions)
@@ -30,9 +43,11 @@ namespace NuGet
         public InstallWalker(IPackageRepository localRepository,
                              IPackageRepository sourceRepository,
                              IPackageConstraintProvider constraintProvider,
+                             FrameworkName targetFramework,
                              ILogger logger,
                              bool ignoreDependencies,
                              bool allowPrereleaseVersions)
+            : base(targetFramework)
         {
 
             if (sourceRepository == null)
@@ -170,6 +185,7 @@ namespace NuGet
             // already decided that there were no conflicts based on the above code.
             var resolver = new UninstallWalker(repository,
                                                dependentsResolver,
+                                               TargetFramework,
                                                NullLogger.Instance,
                                                removeDependencies: !IgnoreDependencies,
                                                forceRemove: false) { ThrowOnConflicts = false };

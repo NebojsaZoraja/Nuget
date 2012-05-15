@@ -72,10 +72,5 @@ namespace NuGet
         {
             return Path;
         }
-
-        private static bool CheckIsEmptyPart(PackagePart part)
-        {
-            return part.ContentType == Constants.PackageEmptyFileContentType;
-        }
     }
 }

@@ -392,7 +392,7 @@ namespace NuGet.Commands
             var dependencies = builder.Dependencies.ToDictionary(d => d.Id, StringComparer.OrdinalIgnoreCase);
 
             // Reduce the set of packages we want to include as dependencies to the minimal set.
-            // Normally, packages.config has the full closure included, we to only add top level
+            // Normally, packages.config has the full closure included, we only add top level
             // packages, i.e. packages with in-degree 0
             foreach (var package in GetMinimumSet(packages))
             {
@@ -429,9 +429,9 @@ namespace NuGet.Commands
             return packageReference.VersionConstraint ?? defaultVersionConstraint;
         }
 
-        private static IEnumerable<IPackage> GetMinimumSet(List<IPackage> packages)
+        private IEnumerable<IPackage> GetMinimumSet(List<IPackage> packages)
         {
-            return new Walker(packages).GetMinimalSet();
+            return new Walker(packages, TargetFramework).GetMinimalSet();
         }
 
         private static void ProcessTransformFiles(PackageBuilder builder, IEnumerable<IPackageFile> transformFiles)
@@ -671,7 +671,8 @@ namespace NuGet.Commands
             private readonly IPackageRepository _repository;
             private readonly List<IPackage> _packages;
 
-            public Walker(List<IPackage> packages)
+            public Walker(List<IPackage> packages, FrameworkName targetFramework) :
+                base(targetFramework)
             {
                 _packages = packages;
                 _repository = new ReadOnlyPackageRepository(packages.ToList());
@@ -708,14 +709,6 @@ namespace NuGet.Commands
                 Path = file.Path + ".transform";
                 _streamFactory = new Lazy<Func<Stream>>(() => ReverseTransform(file, transforms), isThreadSafe: false);
                 TargetFramework = VersionUtility.ParseFrameworkNameFromFilePath(Path, out _effectivePath);
-            }
-
-            public bool IsEmpty
-            {
-                get
-                {
-                    return false;
-                }
             }
 
             public string Path
