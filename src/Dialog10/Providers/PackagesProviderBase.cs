@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Windows;
 using EnvDTE;
 using Microsoft.VisualStudio.ExtensionsExplorer;
@@ -12,7 +13,6 @@ using Microsoft.VisualStudio.ExtensionsExplorer.UI;
 using NuGet.VisualStudio;
 using NuGetConsole;
 using NuGetConsole.Host.PowerShellProvider;
-using System.Runtime.Versioning;
 
 namespace NuGet.Dialog.Providers
 {

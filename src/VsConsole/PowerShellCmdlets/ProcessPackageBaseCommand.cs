@@ -255,34 +255,20 @@ namespace NuGet.PowerShell.Commands
             IPackage package, 
             Project project)
         {
-            string toolsPath = Path.Combine(rootPath, "tools");
-            if (!Directory.Exists(toolsPath))
+            string scriptPath, fullPath;
+            if (package.FindCompatibleToolFiles(scriptFileName, project.GetTargetFrameworkName(), out scriptPath))
             {
-                return;
-            }
-
-            string fullPath;
-            if (project == null)
-            {
-                // for init.ps1
-                fullPath = Path.Combine(toolsPath, scriptFileName);
+                fullPath = Path.Combine(rootPath, scriptPath);
             }
             else
             {
-                string scriptPath;
-                if (package.FindCompatibleToolFiles(scriptFileName, project.GetTargetFrameworkName(), out scriptPath))
-                {
-                    fullPath = Path.Combine(rootPath, scriptPath);
-                }
-                else
-                {
-                    return;
-                }
+                return;
             }
-
+            
             if (File.Exists(fullPath))
             {
                 var psVariable = SessionState.PSVariable;
+                string toolsPath = Path.Combine(rootPath, "tools");
 
                 // set temp variables to pass to the script
                 psVariable.Set("__rootPath", rootPath);

@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using NuGet.Resources;
 using System.Runtime.Versioning;
+using NuGet.Resources;
 
 namespace NuGet
 {

@@ -5,6 +5,7 @@ using System.Runtime.Versioning;
 using Moq;
 using NuGet.Test.Mocks;
 using Xunit;
+using Xunit.Extensions;
 
 namespace NuGet.Test
 {
@@ -1615,7 +1616,413 @@ namespace NuGet.Test
             Assert.True(localRepository.Exists("A"));
         }
 
+        [Fact]
+        public void AddPackageReferenceRecognizeEmptyFrameworkFolder1()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("3.5")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        new[] { "[net20]\\contentFile", "[net35]\\_._", "foo.css" },
+                                                        new[] { "reference.dll" });
 
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.Equal(0, projectSystem.Paths.Count);
+            Assert.False(projectSystem.FileExists(@"_._"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceRecognizeEmptyFrameworkFolder2()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName("Silverlight", new Version("4.0")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        new[] { "[sl20]\\contentFile", "[sl20]\\sub\\no.txt", "[sl3]\\_._", "foo.css" },
+                                                        new[] { "reference.dll" });
+
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.Equal(0, projectSystem.Paths.Count);
+            Assert.False(projectSystem.FileExists(@"_._"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceRecognizeEmptyFrameworkFolder3()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName("Silverlight", new Version("4.0")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        assemblyReferences: new string[] { "lib\\sl3\\reference.dll", "lib\\sl35\\_._" });
+
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.False(projectSystem.ReferenceExists("reference.dll"));
+            Assert.False(projectSystem.ReferenceExists("_._"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceRecognizeEmptyFrameworkFolder4()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETCore", new Version("4.5")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        assemblyReferences: new string[] { 
+                                                            "lib\\sl3\\reference.dll", 
+                                                            "lib\\winrt\\_._"
+                                                        });
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.False(projectSystem.ReferenceExists("reference.dll"));
+            Assert.False(projectSystem.ReferenceExists("_._"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceRecognizeEmptyFrameworkFolder5()
+        {
+            // Arrange
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETCore", new Version("4.5")));
+            var localRepository = new MockPackageRepository();
+            var mockRepository = new MockPackageRepository();
+            var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
+            var packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                        assemblyReferences: new string[] { 
+                                                            "lib\\sl3\\reference.dll", 
+                                                            "lib\\winrt\\_._",
+                                                            "lib\\winrt45\\one.dll"
+                                                        });
+            mockRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.False(projectSystem.ReferenceExists("reference.dll"));
+            Assert.False(projectSystem.ReferenceExists("_._"));
+            Assert.True(projectSystem.ReferenceExists("one.dll"));
+            Assert.True(localRepository.Exists("A"));
+        }
+
+        [Theory]
+        [InlineData("1.0")]
+        [InlineData("4.0")]
+        public void AddPackageReferenceIncludeDependencyPackageCorrectly(string dependencyVersion)
+        {
+            // Arrange            
+            var sourceRepository = new MockPackageRepository();
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
+            var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
+
+            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version(dependencyVersion)) });
+            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                                dependencies: new List<PackageDependency> { dependency }, 
+                                                                content: new[] { "a.txt" });
+
+            IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
+
+            sourceRepository.AddPackage(packageB);
+            sourceRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+            
+            // Assert
+            Assert.True(projectManager.LocalRepository.Exists("A"));
+            Assert.True(projectManager.LocalRepository.Exists("B"));
+            Assert.True(projectSystem.FileExists("a.txt"));
+            Assert.True(projectSystem.FileExists("b.txt"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceIncludeDependencyPackageCorrectly2()
+        {
+            // Arrange            
+            var sourceRepository = new MockPackageRepository();
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
+            var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
+
+            var dependencyB = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("2.1")) });
+            var dependencyC = new PackageDependency("C", null, new[] { new FrameworkName(".NETFramework", new Version("2.0")) });
+            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                                dependencies: new List<PackageDependency> { dependencyB, dependencyC },
+                                                                content: new[] { "a.txt" });
+
+            IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
+
+            IPackage packageC = PackageUtility.CreatePackage("C", "2.0", content: new[] { "c.txt" });
+
+            sourceRepository.AddPackage(packageB);
+            sourceRepository.AddPackage(packageA);
+            sourceRepository.AddPackage(packageC);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.True(projectManager.LocalRepository.Exists("A"));
+            Assert.False(projectManager.LocalRepository.Exists("B"));
+            Assert.True(projectManager.LocalRepository.Exists("C"));
+
+            Assert.True(projectSystem.FileExists("a.txt"));
+            Assert.False(projectSystem.FileExists("b.txt"));
+            Assert.True(projectSystem.FileExists("c.txt"));
+        }
+
+        [Fact]
+        public void AddPackageReferenceIncludeDependencyPackageCorrectly3()
+        {
+            // Arrange            
+            var sourceRepository = new MockPackageRepository();
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
+            var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
+
+            var dependencyB = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("2.1")) });
+            var dependencyC = new PackageDependency("C", null, new[] { new FrameworkName(".NETFramework", new Version("2.0")) });
+            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                                dependencies: new List<PackageDependency> { dependencyB, dependencyC },
+                                                                content: new[] { "a.txt" });
+
+            IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
+
+            IPackage packageC = PackageUtility.CreatePackage("C", "2.0", content: new[] { "[sl4]\\c.txt" });
+
+            sourceRepository.AddPackage(packageB);
+            sourceRepository.AddPackage(packageA);
+            sourceRepository.AddPackage(packageC);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.True(projectManager.LocalRepository.Exists("A"));
+            Assert.False(projectManager.LocalRepository.Exists("B"));
+            Assert.True(projectManager.LocalRepository.Exists("C"));
+
+            Assert.True(projectSystem.FileExists("a.txt"));
+            Assert.False(projectSystem.FileExists("b.txt"));
+            Assert.False(projectSystem.FileExists("c.txt"));
+        }
+
+        [Theory]
+        [InlineData("3.0")]
+        [InlineData("4.0")]
+        public void AddPackageReferenceDoNotIncludeDependencyPackageIfTargetFrameworkDoesNotMatch(string dependencyVersion)
+        {
+            // Arrange
+            var sourceRepository = new MockPackageRepository();
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
+            var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
+
+            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version(dependencyVersion)) });
+            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                                dependencies: new List<PackageDependency> { dependency },
+                                                                content: new[] { "a.txt" });
+
+            IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
+
+            sourceRepository.AddPackage(packageB);
+            sourceRepository.AddPackage(packageA);
+
+            // Act
+            projectManager.AddPackageReference("A");
+
+            // Assert
+            Assert.True(projectManager.LocalRepository.Exists("A"));
+            Assert.False(projectManager.LocalRepository.Exists("B"));
+            Assert.True(projectSystem.FileExists("a.txt"));
+            Assert.False(projectSystem.FileExists("b.txt"));
+        }
+
+        [Theory]
+        [InlineData("1.0")]
+        [InlineData("4.0")]
+        public void RemovePackageReferenceRemoveDependencyPackageCorrectly(string dependencyVersion)
+        {
+            // Arrange            
+            var sourceRepository = new MockPackageRepository();
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
+            var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
+
+            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version(dependencyVersion)) });
+            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                                dependencies: new List<PackageDependency> { dependency },
+                                                                content: new[] { "a.txt" });
+
+            IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
+
+            sourceRepository.AddPackage(packageB);
+            sourceRepository.AddPackage(packageA);
+
+            projectManager.AddPackageReference("A");
+
+            Assert.True(projectManager.LocalRepository.Exists("A"));
+            Assert.True(projectManager.LocalRepository.Exists("B"));
+            Assert.True(projectSystem.FileExists("a.txt"));
+            Assert.True(projectSystem.FileExists("b.txt"));
+
+            // Act
+            projectManager.RemovePackageReference("A", forceRemove: false, removeDependencies: true);
+
+            Assert.False(projectManager.LocalRepository.Exists("A"));
+            Assert.False(projectManager.LocalRepository.Exists("B"));
+            Assert.False(projectSystem.FileExists("a.txt"));
+            Assert.False(projectSystem.FileExists("b.txt"));
+        }
+
+        [Fact]
+        public void RemovePackageReferenceRemoveDependencyPackageCorrectly2()
+        {
+            // Arrange            
+            var sourceRepository = new MockPackageRepository();
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
+            var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
+
+            var dependencyB = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("2.1")) });
+            var dependencyC = new PackageDependency("C", null, new[] { new FrameworkName(".NETFramework", new Version("2.0")) });
+            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                                dependencies: new List<PackageDependency> { dependencyB, dependencyC },
+                                                                content: new[] { "a.txt" });
+
+            IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
+
+            IPackage packageC = PackageUtility.CreatePackage("C", "2.0", content: new[] { "c.txt" });
+
+            sourceRepository.AddPackage(packageB);
+            sourceRepository.AddPackage(packageA);
+            sourceRepository.AddPackage(packageC);
+
+            projectManager.AddPackageReference("A");
+
+            Assert.True(projectManager.LocalRepository.Exists("A"));
+            Assert.False(projectManager.LocalRepository.Exists("B"));
+            Assert.True(projectManager.LocalRepository.Exists("C"));
+
+            Assert.True(projectSystem.FileExists("a.txt"));
+            Assert.False(projectSystem.FileExists("b.txt"));
+            Assert.True(projectSystem.FileExists("c.txt"));
+
+            // Act
+            projectManager.RemovePackageReference("A", forceRemove: false, removeDependencies: true);
+
+            Assert.False(projectManager.LocalRepository.Exists("A"));
+            Assert.False(projectManager.LocalRepository.Exists("B"));
+            Assert.False(projectManager.LocalRepository.Exists("C"));
+
+            Assert.False(projectSystem.FileExists("a.txt"));
+            Assert.False(projectSystem.FileExists("b.txt"));
+            Assert.False(projectSystem.FileExists("c.txt"));
+        }
+
+        [Fact]
+        public void UpdatePackageReferenceIncludeDependencyPackageCorrectly()
+        {
+            // Arrange            
+            var sourceRepository = new MockPackageRepository();
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
+            var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
+
+            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("4.5")) });
+            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                             dependencies: new List<PackageDependency> { dependency },
+                                                             content: new[] { "a.txt" });
+
+            var dependency2 = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("4.0")) });
+            IPackage packageA2 = PackageUtility.CreatePackage("A", "2.0",
+                                                                dependencies: new List<PackageDependency> { dependency2 },
+                                                                content: new[] { "a2.txt" });
+
+            IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
+
+            sourceRepository.AddPackage(packageB);
+            sourceRepository.AddPackage(packageA);
+            sourceRepository.AddPackage(packageA2);
+
+            projectManager.AddPackageReference("A", new SemanticVersion("1.0"));
+            
+            Assert.True(projectManager.LocalRepository.Exists("A"));
+            Assert.False(projectManager.LocalRepository.Exists("B"));
+
+            // Act
+            projectManager.UpdatePackageReference("A");
+
+            // Assert
+            Assert.False(projectManager.LocalRepository.Exists("A", new SemanticVersion("1.0")));
+            Assert.True(projectManager.LocalRepository.Exists("A", new SemanticVersion("2.0")));
+            Assert.True(projectManager.LocalRepository.Exists("B"));
+            Assert.True(projectSystem.FileExists("a2.txt"));
+            Assert.True(projectSystem.FileExists("b.txt"));
+        }
+
+        [Fact]
+        public void UpdatePackageReferenceIncludeDependencyPackageCorrectly2()
+        {
+            // Arrange            
+            var sourceRepository = new MockPackageRepository();
+            var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
+            var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
+
+            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("4.0")) });
+            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
+                                                             dependencies: new List<PackageDependency> { dependency },
+                                                             content: new[] { "a.txt" });
+
+            var dependency2 = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("4.5")) });
+            IPackage packageA2 = PackageUtility.CreatePackage("A", "2.0",
+                                                                dependencies: new List<PackageDependency> { dependency2 },
+                                                                content: new[] { "a2.txt" });
+
+            IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
+
+            sourceRepository.AddPackage(packageB);
+            sourceRepository.AddPackage(packageA);
+            sourceRepository.AddPackage(packageA2);
+
+            projectManager.AddPackageReference("A", new SemanticVersion("1.0"));
+
+            Assert.True(projectManager.LocalRepository.Exists("A"));
+            Assert.True(projectManager.LocalRepository.Exists("B"));
+
+            // Act
+            projectManager.UpdatePackageReference("A");
+
+            // Assert
+            Assert.False(projectManager.LocalRepository.Exists("A", new SemanticVersion("1.0")));
+            Assert.True(projectManager.LocalRepository.Exists("A", new SemanticVersion("2.0")));
+            Assert.False(projectManager.LocalRepository.Exists("B"));
+            Assert.True(projectSystem.FileExists("a2.txt"));
+            Assert.False(projectSystem.FileExists("b.txt"));
+        }
 
         private ProjectManager CreateProjectManager()
         {

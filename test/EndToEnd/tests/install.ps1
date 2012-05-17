@@ -1793,3 +1793,71 @@ function Test-InstallPackageIgnoreInitScriptIfItIsNotDirectlyUnderTools2 {
     Remove-Variable InitVar -Scope Global
 }
 
+function Test-InstallPackageWithEmptyContentFrameworkFolder 
+{
+	param($context)
+
+	# Arrange
+	$project = New-ClassLibrary
+
+	# Act
+	Install-Package TestEmptyContentFolder -Project $project.Name -Source $context.RepositoryRoot
+
+	# Assert
+	Assert-Package $project TestEmptyContentFolder
+	Assert-Null (Get-ProjectItem $project NewFile.txt)
+}
+
+function Test-InstallPackageWithEmptyLibFrameworkFolder 
+{
+	param($context)
+
+	# Arrange
+	$project = New-ClassLibrary
+
+	# Act
+	Install-Package TestEmptyLibFolder -Project $project.Name -Source $context.RepositoryRoot
+
+	# Assert
+	Assert-Package $project TestEmptyLibFolder
+	Assert-Null (Get-AssemblyReference $project one.dll)
+}
+
+function Test-InstallPackageWithEmptyToolsFrameworkFolder
+{
+	param($context)
+
+	# Arrange
+	$project = New-ClassLibrary
+
+	$global:InstallVar = 0
+
+	# Act
+	Install-Package TestEmptyToolsFolder -Project $project.Name -Source $context.RepositoryRoot
+
+	# Assert
+	Assert-Package $project TestEmptyToolsFolder
+	 
+	Assert-AreEqual 0 $global:InstallVar
+
+	Remove-Variable InstallVar -Scope Global
+}
+
+function Test-InstallPackageInstallCorrectDependencyPackageBasedOnTargetFramework
+{
+	param($context)
+
+	# Arrange
+	$project = New-ClassLibrary
+
+	$global:InstallVar = 0
+
+	# Act
+	Install-Package TestDependencyTargetFramework -Project $project.Name -Source $context.RepositoryRoot
+
+	# Assert
+	Assert-Package $project TestDependencyTargetFramework
+	Assert-Package $project TestEmptyLibFolder
+	Assert-NoPackage $project TestEmptyContentFolder
+	Assert-NoPackage $project TestEmptyToolsFolder
+}

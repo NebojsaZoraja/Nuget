@@ -135,7 +135,7 @@ namespace NuGet
                           .Distinct();
         }
 
-        // the returned scriptPath is relative to the package
+        // the returned scriptPath is the relative path inside the package
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "3#")]
         public static bool FindCompatibleToolFiles(
             this IPackage package,
@@ -143,6 +143,20 @@ namespace NuGet
             FrameworkName targetFramework,
             out string toolFilePath)
         {
+            if (scriptName.Equals("init.ps1", StringComparison.OrdinalIgnoreCase))
+            {
+                IPackageFile initFile = package.GetToolFiles()
+                                               .FirstOrDefault(a => a.Path.Equals("tools\\init.ps1", StringComparison.OrdinalIgnoreCase));
+                if (initFile != null)
+                {
+                    toolFilePath = "tools\\init.ps1";
+                    return true;
+                }
+
+                toolFilePath = null;
+                return false;
+            }
+
             // this is the case for either install.ps1 or uninstall.ps1
             // search for the correct script according to target framework of the project
             IEnumerable<IPackageFile> toolFiles;

@@ -3,6 +3,7 @@ using Xunit;
 using Xunit.Extensions;
 using System.Runtime.Versioning;
 using System;
+using Moq;
 
 namespace NuGet.Test
 {
@@ -111,7 +112,7 @@ namespace NuGet.Test
 
             // Assert
             Assert.True(result);
-            Assert.Equal("tools\\" + scriptName, scriptPath);
+            Assert.Equal("tools\\" + scriptName, scriptPath, StringComparer.OrdinalIgnoreCase);
         }
 
         [Theory]
@@ -165,6 +166,45 @@ namespace NuGet.Test
 
             // Assert
             Assert.False(result);
+        }
+
+        [Theory]
+        [InlineData("content\\_._")]
+        [InlineData("lib\\_._")]
+        [InlineData("content\\sub\\_._")]
+        [InlineData("content\\sub\\child\\_._")]
+        [InlineData("_._")]
+        public void TestIsEmptyFolderReturnTrue(string path)
+        {
+            // Arrange
+            var package = new Mock<IPackageFile>();
+            package.Setup(p => p.Path).Returns(path);
+
+            // Act
+            bool isEmptyFolder = package.Object.IsEmptyFolder();
+
+            // Assert
+            Assert.True(isEmptyFolder);
+        }
+
+        [Theory]
+        [InlineData("content\\_._1")]
+        [InlineData("lib\\one.xml")]
+        [InlineData("content")]
+        [InlineData("content\\sub\\child\\_2._")]
+        [InlineData("_.3_")]
+        [InlineData("___")]
+        public void TestIsEmptyFolderReturnFalse(string path)
+        {
+            // Arrange
+            var package = new Mock<IPackageFile>();
+            package.Setup(p => p.Path).Returns(path);
+
+            // Act
+            bool isEmptyFolder = package.Object.IsEmptyFolder();
+
+            // Assert
+            Assert.False(isEmptyFolder);
         }
     }
 }

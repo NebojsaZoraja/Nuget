@@ -235,13 +235,13 @@ namespace NuGet
             ValidateDependencies(Version, Dependencies);
             ValidateReferenceAssemblies(Files, PackageAssemblyReferences);
 
-            bool hasTargetFxForContentOrFiles = HasTargetFrameworkFolderForContentOrToolFiles(Files);
+            bool requiresNewTargetFrameworkSchema = RequiresNewTargetFrameworkSchema(Files);
 
             using (Package package = Package.Open(stream, FileMode.Create))
             {
                 // Validate and write the manifest
-                WriteManifest(package, 
-                    hasTargetFxForContentOrFiles ? 
+                WriteManifest(package,
+                    requiresNewTargetFrameworkSchema ? 
                         ManifestVersionUtility.TargetFrameworkSupportVersion : 
                         ManifestVersionUtility.DefaultVersion);
 
@@ -259,7 +259,7 @@ namespace NuGet
             }
         }
 
-        private static bool HasTargetFrameworkFolderForContentOrToolFiles(ICollection<IPackageFile> files)
+        private static bool RequiresNewTargetFrameworkSchema(ICollection<IPackageFile> files)
         {
             // check if any file under Content or Tools has TargetFramework defined
             bool hasContentOrTool = files.Any(

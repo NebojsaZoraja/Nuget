@@ -35,33 +35,19 @@ namespace NuGet.VisualStudio
 
         public bool Execute(string installPath, string scriptFileName, IPackage package, Project project, ILogger logger)
         {
-            string toolsPath = Path.Combine(installPath, "tools");
-            if (!Directory.Exists(toolsPath))
+            string scriptPath, fullPath;
+            if (package.FindCompatibleToolFiles(scriptFileName, project.GetTargetFrameworkName(), out scriptPath))
+            {
+                fullPath = Path.Combine(installPath, scriptPath);
+            }
+            else
             {
                 return false;
             }
 
-            string fullPath;
-            if (project == null)
-            {
-                // for init.ps1
-                fullPath = Path.Combine(toolsPath, scriptFileName);
-            }
-            else
-            {
-                string scriptPath;
-                if (package.FindCompatibleToolFiles(scriptFileName, project.GetTargetFrameworkName(), out scriptPath))
-                {
-                    fullPath = Path.Combine(installPath, scriptPath);
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
             if (File.Exists(fullPath))
             {
+                string toolsPath = Path.Combine(installPath, "tools");
                 string logMessage = String.Format(CultureInfo.CurrentCulture, VsResources.ExecutingScript, fullPath);
 
                 // logging to both the Output window and progress window.

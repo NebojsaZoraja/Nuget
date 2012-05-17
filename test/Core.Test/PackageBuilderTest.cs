@@ -4,14 +4,15 @@ using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Xml;
 using Moq;
 using Xunit;
 using Xunit.Extensions;
+using System.IO.Packaging;
 
 namespace NuGet.Test
 {
-
     public class PackageBuilderTest
     {
         [Fact]
@@ -146,6 +147,223 @@ namespace NuGet.Test
     </references>
   </metadata>
 </package>", ms.ReadToEnd());
+        }
+
+        [Fact]
+        public void CreatePackageUsesV2SchemaNamespaceIfDependecyHasNoTargetFramework()
+        {
+            // Arrange
+            PackageBuilder builder = new PackageBuilder()
+            {
+                Id = "A",
+                Version = new SemanticVersion("1.0"),
+                Description = "Descriptions",
+            };
+            builder.Authors.Add("Luan");
+
+            builder.Dependencies.Add(new PackageDependency("B"));
+            var ms = new MemoryStream();
+
+            // Act
+            Manifest.Create(builder).Save(ms);
+            ms.Seek(0, SeekOrigin.Begin);
+
+            // Assert
+            Assert.Equal(@"<?xml version=""1.0""?>
+<package xmlns=""http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd"">
+  <metadata>
+    <id>A</id>
+    <version>1.0</version>
+    <authors>Luan</authors>
+    <owners>Luan</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Descriptions</description>
+    <dependencies>
+      <dependency id=""B"" />
+    </dependencies>
+  </metadata>
+</package>", ms.ReadToEnd());
+        }
+
+        [Fact]
+        public void CreatePackageUsesV4SchemaNamespaceIfDependecyHasTargetFramework()
+        {
+            // Arrange
+            PackageBuilder builder = new PackageBuilder()
+            {
+                Id = "A",
+                Version = new SemanticVersion("1.0"),
+                Description = "Descriptions",
+            };
+            builder.Authors.Add("Luan");
+
+            var fx = new FrameworkName("Silverlight", new Version("4.0"));
+            builder.Dependencies.Add(new PackageDependency("B", null, new[] { fx }));
+            var ms = new MemoryStream();
+
+            // Act
+            Manifest.Create(builder).Save(ms);
+            ms.Seek(0, SeekOrigin.Begin);
+
+            // Assert
+            Assert.Equal(@"<?xml version=""1.0""?>
+<package xmlns=""http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd"">
+  <metadata>
+    <id>A</id>
+    <version>1.0</version>
+    <authors>Luan</authors>
+    <owners>Luan</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Descriptions</description>
+    <dependencies>
+      <dependency id=""B"" targetFramework=""Silverlight,Version=v4.0"" />
+    </dependencies>
+  </metadata>
+</package>", ms.ReadToEnd());
+        }
+
+        [Fact]
+        public void CreatePackageUsesV4SchemaNamespaceIfContentHasTargetFramework()
+        {
+            // Arrange
+            PackageBuilder builder = new PackageBuilder()
+            {
+                Id = "A",
+                Version = new SemanticVersion("1.0"),
+                Description = "Descriptions",
+            };
+            builder.Authors.Add("Luan");
+            builder.Files.Add(CreatePackageFile("content\\[winrt53]\\one.txt"));
+
+            using (var ms = new MemoryStream())
+            {
+                builder.Save(ms);
+
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var manifestStream = GetManifestStream(ms);
+
+                // Assert
+                Assert.Equal(@"<?xml version=""1.0""?>
+<package xmlns=""http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd"">
+  <metadata>
+    <id>A</id>
+    <version>1.0</version>
+    <authors>Luan</authors>
+    <owners>Luan</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Descriptions</description>
+  </metadata>
+</package>", manifestStream.ReadToEnd());
+            }
+        }
+
+        [Fact]
+        public void CreatePackageUsesV4SchemaNamespaceIfLibHasTargetFrameworkAndUseBrackets()
+        {
+            // Arrange
+            PackageBuilder builder = new PackageBuilder()
+            {
+                Id = "A",
+                Version = new SemanticVersion("1.0"),
+                Description = "Descriptions",
+            };
+            builder.Authors.Add("Luan");
+            builder.Files.Add(CreatePackageFile("tools\\[sl4]\\one.dll"));
+
+            using (var ms = new MemoryStream())
+            {
+                builder.Save(ms);
+
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var manifestStream = GetManifestStream(ms);
+
+                // Assert
+                Assert.Equal(@"<?xml version=""1.0""?>
+<package xmlns=""http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd"">
+  <metadata>
+    <id>A</id>
+    <version>1.0</version>
+    <authors>Luan</authors>
+    <owners>Luan</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Descriptions</description>
+  </metadata>
+</package>", manifestStream.ReadToEnd());
+            }
+        }
+
+        [Fact]
+        public void CreatePackageUsesV2SchemaNamespaceIfLibHasTargetFrameworkButDoNotUseBrackets()
+        {
+            // Arrange
+            PackageBuilder builder = new PackageBuilder()
+            {
+                Id = "A",
+                Version = new SemanticVersion("1.0"),
+                Description = "Descriptions",
+            };
+            builder.Authors.Add("Luan");
+            builder.Files.Add(CreatePackageFile("lib\\sl4\\one.dll"));
+
+            using (var ms = new MemoryStream())
+            {
+                builder.Save(ms);
+
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var manifestStream = GetManifestStream(ms);
+
+                // Assert
+                Assert.Equal(@"<?xml version=""1.0""?>
+<package xmlns=""http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd"">
+  <metadata>
+    <id>A</id>
+    <version>1.0</version>
+    <authors>Luan</authors>
+    <owners>Luan</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Descriptions</description>
+  </metadata>
+</package>", manifestStream.ReadToEnd());
+            }
+        }
+
+        [Fact]
+        public void CreatePackageUsesV4SchemaNamespaceIfToolsHasTargetFramework()
+        {
+            // Arrange
+            PackageBuilder builder = new PackageBuilder()
+            {
+                Id = "A",
+                Version = new SemanticVersion("1.0"),
+                Description = "Descriptions",
+            };
+            builder.Authors.Add("Luan");
+            builder.Files.Add(CreatePackageFile("tools\\[sl4]\\one.dll"));
+
+            using (var ms = new MemoryStream())
+            {
+                builder.Save(ms);
+
+                ms.Seek(0, SeekOrigin.Begin);
+
+                var manifestStream = GetManifestStream(ms);
+
+                // Assert
+                Assert.Equal(@"<?xml version=""1.0""?>
+<package xmlns=""http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd"">
+  <metadata>
+    <id>A</id>
+    <version>1.0</version>
+    <authors>Luan</authors>
+    <owners>Luan</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Descriptions</description>
+  </metadata>
+</package>", manifestStream.ReadToEnd());
+            }
         }
 
         [Fact]
@@ -1133,7 +1351,21 @@ Enabling license acceptance requires a license url.");
             var file = new Mock<IPackageFile>();
             file.SetupGet(f => f.Path).Returns(name);
             file.Setup(f => f.GetStream()).Returns(new MemoryStream());
+
+            string effectivePath;
+            var fx = VersionUtility.ParseFrameworkNameFromFilePath(name, out effectivePath);
+            file.SetupGet(f => f.EffectivePath).Returns(effectivePath);
+            file.SetupGet(f => f.TargetFramework).Returns(fx);
+
             return file.Object;
+        }
+
+        private Stream GetManifestStream(Stream packageStream)
+        {
+            Package package = Package.Open(packageStream);
+            PackageRelationship relationshipType = package.GetRelationshipsByType(Constants.PackageRelationshipNamespace + PackageBuilder.ManifestRelationType).SingleOrDefault();
+            PackagePart manifestPart = package.GetPart(relationshipType.TargetUri);
+            return manifestPart.GetStream();
         }
     }
 }
