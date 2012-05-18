@@ -151,7 +151,7 @@ namespace NuGet
             set;
         }
 
-        public IEnumerable<PackageDependency> Dependencies
+        public IEnumerable<PackageDependencySet> DependencySets
         {
             get;
             set;
@@ -209,7 +209,7 @@ namespace NuGet
             ReleaseNotes = metadata.ReleaseNotes;
             Language = metadata.Language;
             Tags = metadata.Tags;
-            Dependencies = metadata.Dependencies;
+            DependencySets = metadata.DependencySets;
             FrameworkAssemblies = metadata.FrameworkAssemblies;
             Copyright = metadata.Copyright;
             ManifestReferences = manifest.Metadata.References;

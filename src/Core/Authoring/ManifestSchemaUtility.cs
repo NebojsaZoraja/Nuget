@@ -31,6 +31,12 @@ namespace NuGet
         /// </summary>
         internal const string SchemaVersionV4 = "http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd";
 
+        /// <summary>
+        /// This is the minimum version of schema that allows specifying
+        /// target frameworks for package dependencies.
+        /// </summary>
+        internal const int TargetFrameworkInDependencyMinVersion = 4;
+
         private static readonly string[] VersionToSchemaMappings = new[] {
             SchemaVersionV1,
             SchemaVersionV2,
@@ -48,6 +54,14 @@ namespace NuGet
 
         private static readonly ConcurrentDictionary<string, string> _schemaCache = new ConcurrentDictionary<string, string>(
             concurrencyLevel: 4, capacity: 5, comparer: StringComparer.OrdinalIgnoreCase);
+
+        public static int GetVersionFromNamespace(string @namespace)
+        {
+            int index = Math.Max(0, Array.IndexOf(VersionToSchemaMappings, @namespace));
+
+            // we count version from 1 instead of 0
+            return index + 1;
+        }
 
         public static string GetSchemaNamespace(int version)
         {

@@ -94,8 +94,7 @@ namespace NuGet
 
             if (!IgnoreDependencies)
             {
-                IEnumerable<PackageDependency> filteredDependencies = GetFilteredPackageDependencies(package.Dependencies);
-                foreach (var dependency in filteredDependencies)
+                foreach (var dependency in package.GetCompatiblePackageDependencies(TargetFramework))
                 {
                     // Try to resolve the dependency from the visited packages first
                     IPackage resolvedDependency = Marker.ResolveDependency(dependency, AllowPrereleaseVersions, preferListedPackages: false) ??
@@ -152,33 +151,9 @@ namespace NuGet
             // Mark the package as visited
             Marker.MarkVisited(package);
 
-
             ProcessPackageTarget(package);
 
             OnAfterPackageWalk(package);
-        }
-
-        /// <summary>
-        /// Get the dependencies based on the target framework.
-        /// </summary>
-        /// <param name="package">All dependencies before being filtered.</param>
-        private IEnumerable<PackageDependency> GetFilteredPackageDependencies(IEnumerable<PackageDependency> dependencies)
-        {
-            IEnumerable<PackageDependency> filteredDependencies = null;
-            if (TargetFramework != null)
-            {
-                if (!VersionUtility.TryGetCompatibleItems(TargetFramework, dependencies, out filteredDependencies))
-                {
-                    filteredDependencies = new PackageDependency[0];
-                }
-            }
-            else
-            {
-                // if there is no target framework, return all dependencies
-                filteredDependencies = dependencies;
-            }
-
-            return filteredDependencies;
         }
 
         /// <summary>

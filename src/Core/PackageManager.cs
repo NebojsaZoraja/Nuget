@@ -193,7 +193,7 @@ namespace NuGet
 
                 // If this is a Satellite Package, then copy the satellite files into the related runtime package folder too
                 IPackage runtimePackage;
-                if (PackageUtility.IsSatellitePackage(package, LocalRepository, out runtimePackage))
+                if (PackageUtility.IsSatellitePackage(package, LocalRepository, targetFramework: null, runtimePackage: out runtimePackage))
                 {
                     var satelliteFiles = package.GetSatelliteFiles();
                     var runtimePath = PathResolver.GetPackageDirectory(runtimePackage);
@@ -291,7 +291,7 @@ namespace NuGet
 
             // If this is a Satellite Package, then remove the files from the related runtime package folder too
             IPackage runtimePackage;
-            if (PackageUtility.IsSatellitePackage(package, LocalRepository, out runtimePackage))
+            if (PackageUtility.IsSatellitePackage(package, LocalRepository, targetFramework: null, runtimePackage: out runtimePackage))
             {
                 var satelliteFiles = package.GetSatelliteFiles();
                 var runtimePath = PathResolver.GetPackageDirectory(runtimePackage);

@@ -469,7 +469,7 @@ namespace NuGet
                 {
                     return VersionUtility.ParseFrameworkFolderName(
                         filePath.Substring(folderPrefix.Length),
-                        strictParsing: knownFolders[i] != Constants.LibDirectory,
+                        strictParsing: knownFolders[i] != Constants.ContentDirectory,
                         effectivePath: out effectivePath);
                 }
             }
@@ -481,18 +481,15 @@ namespace NuGet
         public static FrameworkName ParseFrameworkFolderName(string path)
         {
             string effectivePath;
-            return ParseFrameworkFolderName(path, strictParsing: false, effectivePath: out effectivePath);
+            return ParseFrameworkFolderName(path, strictParsing: true, effectivePath: out effectivePath);
         }
 
         /// <summary>
         /// Parses the specified string into FrameworkName object.
         /// </summary>
         /// <param name="path">The string to be parse.</param>
-        /// <param name="strictParsing">if set to <c>true</c> requires the given path to be surrounded [].</param>
-        /// <remarks>
-        /// Starting from 2.0, we require framework folders for Content and Tools to be surrounded by [].
-        /// To avoid breaking existing packages, we exempt Lib assemblies from this rule.
-        /// </remarks>
+        /// <param name="strictParsing">if set to <c>true</c>, parse the first folder of path even if it is unrecognized framework.</param>
+        /// <param name="effectivePath">returns the path after the parsed target framework</param>
         /// <returns></returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "2#")]
         public static FrameworkName ParseFrameworkFolderName(string path, bool strictParsing, out string effectivePath)
@@ -509,28 +506,17 @@ namespace NuGet
 
             effectivePath = path;
 
-            if (targetFrameworkString.Length > 2 &&
-                targetFrameworkString[0] == '[' &&
-                targetFrameworkString[targetFrameworkString.Length - 1] == ']')
+            if (String.IsNullOrEmpty(targetFrameworkString))
             {
-                // skip past the framework folder and the character \
-                effectivePath = path.Substring(targetFrameworkString.Length + 1);
-                targetFrameworkString = targetFrameworkString.Substring(1, targetFrameworkString.Length - 2);
-            }
-            else if (strictParsing)
-            {
-                // with strict parsing, the framework string must be surrounded by [ ].
                 return null;
             }
-            else if (!String.IsNullOrEmpty(targetFrameworkString))
+
+            var targetFramework = ParseFrameworkName(targetFrameworkString);
+            if (strictParsing || targetFramework != UnsupportedFrameworkName)
             {
                 // skip past the framework folder and the character \
                 effectivePath = path.Substring(targetFrameworkString.Length + 1);
-            }
-
-            if (!String.IsNullOrEmpty(targetFrameworkString))
-            {
-                return VersionUtility.ParseFrameworkName(targetFrameworkString);
+                return targetFramework;
             }
 
             return null;

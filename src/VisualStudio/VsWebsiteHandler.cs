@@ -183,7 +183,7 @@ namespace NuGet.VisualStudio
                 _path = assemblyPath;
 
                 string pathExcludeLib = assemblyPath.Substring(Constants.LibDirectory.Length).Trim(System.IO.Path.DirectorySeparatorChar);
-                _targetFramework = VersionUtility.ParseFrameworkFolderName(pathExcludeLib, strictParsing: false, effectivePath: out _effectivePath);
+                _targetFramework = VersionUtility.ParseFrameworkFolderName(pathExcludeLib, strictParsing: true, effectivePath: out _effectivePath);
             }
 
             public FrameworkName TargetFramework

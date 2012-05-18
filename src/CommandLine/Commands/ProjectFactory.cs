@@ -389,7 +389,8 @@ namespace NuGet.Commands
             // Add the transform file to the package builder
             ProcessTransformFiles(builder, packages.SelectMany(GetTransformFiles));
 
-            var dependencies = builder.Dependencies.ToDictionary(d => d.Id, StringComparer.OrdinalIgnoreCase);
+            var dependencies = builder.GetCompatiblePackageDependencies(targetFramework: null)
+                                      .ToDictionary(d => d.Id, StringComparer.OrdinalIgnoreCase);
 
             // Reduce the set of packages we want to include as dependencies to the minimal set.
             // Normally, packages.config has the full closure included, we only add top level
@@ -407,12 +408,10 @@ namespace NuGet.Commands
                 dependencies[dependency.Id] = dependency;
             }
 
-            // Clear all dependencies
-            builder.Dependencies.Clear();
-            foreach (var d in dependencies.Values)
-            {
-                builder.Dependencies.Add(d);
-            }
+            // TO FIX: when we persis the target framework into packages.config file, 
+            // we need to pull that info into building the PackageDependencySet object
+            builder.DependencySets.Clear();
+            builder.DependencySets.Add(new PackageDependencySet(null, dependencies.Values));
         }
 
         private static IVersionSpec GetVersionConstraint(IDictionary<Tuple<string, SemanticVersion>, PackageReference> packageReferences, IPackage package)

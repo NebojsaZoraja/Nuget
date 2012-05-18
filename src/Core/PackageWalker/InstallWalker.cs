@@ -150,7 +150,7 @@ namespace NuGet
             //      C2 -> []
             // Given the above graph, if we upgrade from C1 to C2, we need to see if A and B can work with the new C
             var incompatiblePackages = from dependentPackage in GetDependents(conflictResult)
-                                       let dependency = dependentPackage.FindDependency(package.Id)
+                                       let dependency = dependentPackage.FindDependency(package.Id, TargetFramework)
                                        where dependency != null && !dependency.VersionSpec.Satisfies(package.Version)
                                        select dependentPackage;
 
@@ -210,7 +210,7 @@ namespace NuGet
             }
 
             // Get compatible packages in one batch so we don't have to make requests for each one
-            var packages = from p in SourceRepository.FindCompatiblePackages(ConstraintProvider, dependentsLookup.Keys, package, AllowPrereleaseVersions)
+            var packages = from p in SourceRepository.FindCompatiblePackages(ConstraintProvider, dependentsLookup.Keys, package, TargetFramework, AllowPrereleaseVersions)
                            group p by p.Id into g
                            let oldPackage = dependentsLookup[g.Key]
                            select new

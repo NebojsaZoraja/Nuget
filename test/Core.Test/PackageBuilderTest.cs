@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
+using System.IO.Packaging;
 using System.Linq;
 using System.Runtime.Versioning;
 using System.Xml;
 using Moq;
 using Xunit;
 using Xunit.Extensions;
-using System.IO.Packaging;
 
 namespace NuGet.Test
 {
@@ -161,7 +161,11 @@ namespace NuGet.Test
             };
             builder.Authors.Add("Luan");
 
-            builder.Dependencies.Add(new PackageDependency("B"));
+            var dependencies = new PackageDependency[] { 
+                new PackageDependency("B")
+            };
+
+            builder.DependencySets.Add(new PackageDependencySet(null, dependencies));
             var ms = new MemoryStream();
 
             // Act
@@ -198,7 +202,11 @@ namespace NuGet.Test
             builder.Authors.Add("Luan");
 
             var fx = new FrameworkName("Silverlight", new Version("4.0"));
-            builder.Dependencies.Add(new PackageDependency("B", null, new[] { fx }));
+            var dependencies = new PackageDependency[] { 
+                new PackageDependency("B", null)
+            };
+            builder.DependencySets.Add(new PackageDependencySet(fx, dependencies));
+
             var ms = new MemoryStream();
 
             // Act
@@ -216,7 +224,9 @@ namespace NuGet.Test
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Descriptions</description>
     <dependencies>
-      <dependency id=""B"" targetFramework=""Silverlight,Version=v4.0"" />
+      <group targetFramework=""Silverlight,Version=v4.0"">
+        <dependency id=""B"" />
+      </group>
     </dependencies>
   </metadata>
 </package>", ms.ReadToEnd());
@@ -233,7 +243,7 @@ namespace NuGet.Test
                 Description = "Descriptions",
             };
             builder.Authors.Add("Luan");
-            builder.Files.Add(CreatePackageFile("content\\[winrt53]\\one.txt"));
+            builder.Files.Add(CreatePackageFile("content\\winrt53\\one.txt"));
 
             using (var ms = new MemoryStream())
             {
@@ -384,7 +394,10 @@ namespace NuGet.Test
             builder.Tags.Add("t1");
             builder.Tags.Add("t2");
             builder.Tags.Add("t3");
-            builder.Dependencies.Add(new PackageDependency("     X   "));
+            var dependencies = new PackageDependency[] { 
+                new PackageDependency("    X     ")
+            };
+            builder.DependencySets.Add(new PackageDependencySet(null, dependencies));
             var ms = new MemoryStream();
 
             // Act
@@ -424,17 +437,23 @@ namespace NuGet.Test
                 Summary = "Summary",
             };
             builder.Authors.Add("David");
-            builder.Dependencies.Add(new PackageDependency("B", new VersionSpec
-            {
-                MinVersion = new SemanticVersion("1.0"),
-                IsMinInclusive = true
-            }));
-            builder.Dependencies.Add(new PackageDependency("C", new VersionSpec
-            {
-                MinVersion = new SemanticVersion("1.0"),
-                MaxVersion = new SemanticVersion("5.0"),
-                IsMinInclusive = false
-            }));
+            
+            var dependencySet = new PackageDependencySet(null, new [] {
+                new PackageDependency("B", new VersionSpec
+                    {
+                        MinVersion = new SemanticVersion("1.0"),
+                        IsMinInclusive = true
+                    }),
+                new PackageDependency("C", new VersionSpec
+                {
+                    MinVersion = new SemanticVersion("1.0"),
+                    MaxVersion = new SemanticVersion("5.0"),
+                    IsMinInclusive = false
+                })
+            });
+
+            builder.DependencySets.Add(dependencySet);
+
             var ms = new MemoryStream();
 
             // Act
@@ -473,17 +492,23 @@ namespace NuGet.Test
                 Summary = "Summary",
             };
             builder.Authors.Add("David");
-            builder.Dependencies.Add(new PackageDependency("B", new VersionSpec
-            {
-                MinVersion = new SemanticVersion("1.0"),
-                IsMinInclusive = true
-            }));
-            builder.Dependencies.Add(new PackageDependency("B", new VersionSpec
-            {
-                MinVersion = new SemanticVersion("1.0"),
-                MaxVersion = new SemanticVersion("5.0"),
-                IsMinInclusive = false
-            }));
+
+            var dependencySet = new PackageDependencySet(null, new[] {
+                new PackageDependency("B", new VersionSpec
+                    {
+                        MinVersion = new SemanticVersion("1.0"),
+                        IsMinInclusive = true
+                    }),
+                new PackageDependency("B", new VersionSpec
+                {
+                    MinVersion = new SemanticVersion("1.0"),
+                    MaxVersion = new SemanticVersion("5.0"),
+                    IsMinInclusive = false
+                })
+            });
+
+            builder.DependencySets.Add(dependencySet);
+
             var ms = new MemoryStream();
 
             // Act
@@ -502,11 +527,17 @@ namespace NuGet.Test
                 Summary = "Summary",
             };
             builder.Authors.Add("David");
-            builder.Dependencies.Add(new PackageDependency("B", new VersionSpec
-            {
-                MinVersion = new SemanticVersion("1.0"),
-                MaxVersion = new SemanticVersion("1.0")
-            }));
+
+            var dependencySet = new PackageDependencySet(null, new[] {
+                new PackageDependency("B", new VersionSpec
+                {
+                    MinVersion = new SemanticVersion("1.0"),
+                    MaxVersion = new SemanticVersion("1.0")
+                })
+            });
+
+            builder.DependencySets.Add(dependencySet);
+
             var ms = new MemoryStream();
 
             // Act
@@ -543,11 +574,18 @@ namespace NuGet.Test
                 Summary = "Summary",
             };
             builder.Authors.Add("David");
-            builder.Dependencies.Add(new PackageDependency("B", new VersionSpec
-            {
-                MinVersion = new SemanticVersion("2.0"),
-                MaxVersion = new SemanticVersion("1.0")
-            }));
+
+            var dependencySet = new PackageDependencySet(null, new[] {
+                new PackageDependency("B", new VersionSpec
+                {
+                    MinVersion = new SemanticVersion("2.0"),
+                    MaxVersion = new SemanticVersion("1.0")
+                })
+            });
+
+            builder.DependencySets.Add(dependencySet);
+
+
             var ms = new MemoryStream();
 
             // Act
@@ -930,7 +968,10 @@ Description is required.");
             Assert.Equal(new Uri("http://somesite/somelicense.txt"), builder.LicenseUrl);
             Assert.True(builder.RequireLicenseAcceptance);
 
-            IDictionary<string, IVersionSpec> dependencies = builder.Dependencies.ToDictionary(p => p.Id, p => p.VersionSpec);
+            Assert.Equal(1, builder.DependencySets.Count);
+            var dependencySet = builder.DependencySets[0];
+
+            IDictionary<string, IVersionSpec> dependencies = dependencySet.Dependencies.ToDictionary(p => p.Id, p => p.VersionSpec);
             // <dependency id="A" version="[1.0]" />
             Assert.True(dependencies["A"].IsMinInclusive);
             Assert.True(dependencies["A"].IsMaxInclusive);
@@ -1031,8 +1072,12 @@ Description is required.");
             };
             var packageVersion = new SemanticVersion("1.0.0");
 
+            var dependencySets = new PackageDependencySet[] {
+                new PackageDependencySet(null, dependencies)
+            };
+
             // Act and Assert
-            ExceptionAssert.Throws<InvalidDataException>(() => PackageBuilder.ValidateDependencies(packageVersion, dependencies),
+            ExceptionAssert.Throws<InvalidDataException>(() => PackageBuilder.ValidateDependencySets(packageVersion, dependencySets),
                 String.Format(CultureInfo.InvariantCulture,
                     "A stable release of a package should not have on a prerelease dependency. Either modify the version spec of dependency \"{0}\" or update the version field.",
                     badDependency));
@@ -1049,8 +1094,12 @@ Description is required.");
             };
             var packageVersion = new SemanticVersion("1.0.0-beta");
 
+            var dependencySets = new PackageDependencySet[] {
+                new PackageDependencySet(null, dependencies)
+            };
+
             // Act
-            PackageBuilder.ValidateDependencies(packageVersion, dependencies);
+            PackageBuilder.ValidateDependencySets(packageVersion, dependencySets);
 
             // Assert
             // If we've got this far, no exceptions were thrown.
@@ -1067,8 +1116,12 @@ Description is required.");
             };
             var packageVersion = new SemanticVersion("1.0.0");
 
+            var dependencySets = new PackageDependencySet[] {
+                new PackageDependencySet(null, dependencies)
+            };
+
             // Act
-            PackageBuilder.ValidateDependencies(packageVersion, dependencies);
+            PackageBuilder.ValidateDependencySets(packageVersion, dependencySets);
 
             // Assert
             // If we've got this far, no exceptions were thrown.
@@ -1175,7 +1228,11 @@ Enabling license acceptance requires a license url.");
                 Description = "Description"
             };
             builder.Authors.Add("Me");
-            builder.Dependencies.Add(new PackageDependency("X"));
+
+            var dependencies = new PackageDependency[] {
+                new PackageDependency("X")
+            };
+            builder.DependencySets.Add(new PackageDependencySet(null, dependencies));
 
             // Act & Assert            
             ExceptionAssert.Throws<InvalidOperationException>(() => builder.Save(new MemoryStream()), "The special version part cannot exceed 20 characters.");

@@ -21,8 +21,10 @@ namespace NuGet
 
         private static int GetVersionFromMetadata(ManifestMetadata metadata)
         {
-            if (metadata.Dependencies != null && 
-                metadata.Dependencies.Any(d => !String.IsNullOrEmpty(d.TargetFramework)))
+            bool dependencyHasTargetFramework =
+                metadata.DependencySets != null &&
+                metadata.DependencySets.Any(d => d.TargetFramework != null);
+            if (dependencyHasTargetFramework)
             {
                 return TargetFrameworkSupportVersion;
             }

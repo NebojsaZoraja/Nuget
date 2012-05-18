@@ -74,6 +74,38 @@ namespace NuGet.Test
                                  satelliteAssemblies: null);
         }
 
+        public static IPackage CreatePackage2(string id,
+                                              string version = "1.0",
+                                              IEnumerable<string> content = null,
+                                              IEnumerable<string> assemblyReferences = null,
+                                              IEnumerable<string> tools = null,
+                                              IEnumerable<PackageDependencySet> dependencySets = null,
+                                              int downloadCount = 0,
+                                              string description = null,
+                                              string summary = null,
+                                              bool listed = true,
+                                              string tags = "",
+                                              string language = null,
+                                              IEnumerable<string> satelliteAssemblies = null)
+        {
+            assemblyReferences = assemblyReferences ?? Enumerable.Empty<string>();
+            satelliteAssemblies = satelliteAssemblies ?? Enumerable.Empty<string>();
+
+            return CreatePackage(id,
+                                 version,
+                                 content,
+                                 CreateAssemblyReferences(assemblyReferences),
+                                 tools,
+                                 dependencySets,
+                                 downloadCount,
+                                 description,
+                                 summary,
+                                 listed,
+                                 tags,
+                                 language,
+                                 CreateAssemblyReferences(satelliteAssemblies));
+        }
+
         public static IPackage CreatePackage(string id,
                                               string version,
                                               IEnumerable<string> content,
@@ -88,10 +120,44 @@ namespace NuGet.Test
                                               string language,
                                               IEnumerable<IPackageAssemblyReference> satelliteAssemblies)
         {
+            var dependencySets = new List<PackageDependencySet>
+            {
+                new PackageDependencySet(null, dependencies ?? Enumerable.Empty<PackageDependency>())
+            };
+
+            return CreatePackage(id,
+                                 version,
+                                 content,
+                                 assemblyReferences,
+                                 tools,
+                                 dependencySets,
+                                 downloadCount,
+                                 description,
+                                 summary,
+                                 listed,
+                                 tags,
+                                 language,
+                                 satelliteAssemblies);
+        }
+
+        public static IPackage CreatePackage(string id,
+                                              string version,
+                                              IEnumerable<string> content,
+                                              IEnumerable<IPackageAssemblyReference> assemblyReferences,
+                                              IEnumerable<string> tools,
+                                              IEnumerable<PackageDependencySet> dependencySets,
+                                              int downloadCount,
+                                              string description,
+                                              string summary,
+                                              bool listed,
+                                              string tags,
+                                              string language,
+                                              IEnumerable<IPackageAssemblyReference> satelliteAssemblies)
+        {
             content = content ?? Enumerable.Empty<string>();
             assemblyReferences = assemblyReferences ?? Enumerable.Empty<IPackageAssemblyReference>();
             satelliteAssemblies = satelliteAssemblies ?? Enumerable.Empty<IPackageAssemblyReference>();
-            dependencies = dependencies ?? Enumerable.Empty<PackageDependency>();
+            dependencySets = dependencySets ?? Enumerable.Empty<PackageDependencySet>();
             tools = tools ?? Enumerable.Empty<string>();
             description = description ?? "Mock package " + id;
 
@@ -109,7 +175,7 @@ namespace NuGet.Test
             mockPackage.Setup(m => m.Version).Returns(new SemanticVersion(version));
             mockPackage.Setup(m => m.GetFiles()).Returns(allFiles);
             mockPackage.Setup(m => m.AssemblyReferences).Returns(assemblyReferences);
-            mockPackage.Setup(m => m.Dependencies).Returns(dependencies);
+            mockPackage.Setup(m => m.DependencySets).Returns(dependencySets);
             mockPackage.Setup(m => m.Description).Returns(description);
             mockPackage.Setup(m => m.Language).Returns("en-US");
             mockPackage.Setup(m => m.Authors).Returns(new[] { "Tester" });

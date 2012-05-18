@@ -1458,7 +1458,7 @@ namespace NuGet.Test
             var mockRepository = new MockPackageRepository();
             var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
             var packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                        new[] { "[net20]\\contentFile", "[net35]\\jQuery.js", "foo.css" },
+                                                        new[] { "net20\\contentFile", "net35\\jQuery.js", "foo.css" },
                                                         new[] { "reference.dll" });
 
             mockRepository.AddPackage(packageA);
@@ -1481,7 +1481,7 @@ namespace NuGet.Test
             var mockRepository = new MockPackageRepository();
             var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
             var packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                        new[] { "[sl3]\\contentFile", "[winrt45]\\jQuery.js", "sub\\foo.css" },
+                                                        new[] { "sl3\\contentFile", "winrt45\\jQuery.js", "sub\\foo.css" },
                                                         new[] { "reference.dll" });
 
             mockRepository.AddPackage(packageA);
@@ -1504,7 +1504,7 @@ namespace NuGet.Test
             var mockRepository = new MockPackageRepository();
             var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
             var packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                        new[] { "[sl3]\\contentFile", "[winrt45]\\jQuery.js" },
+                                                        new[] { "sl3\\contentFile", "winrt45\\jQuery.js" },
                                                         new[] { "reference.dll" });
 
             mockRepository.AddPackage(packageA);
@@ -1526,7 +1526,7 @@ namespace NuGet.Test
             var mockRepository = new MockPackageRepository();
             var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
             var packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                        new[] { "[net20]\\contentFile", "[net35]\\jQuery.js", "foo.css" },
+                                                        new[] { "net20\\contentFile", "net35\\jQuery.js", "foo.css" },
                                                         new[] { "reference.dll" });
 
             mockRepository.AddPackage(packageA);
@@ -1549,7 +1549,7 @@ namespace NuGet.Test
             var mockRepository = new MockPackageRepository();
             var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
             var packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                        new[] { "[net20]\\contentFile", "[net35]\\sub\\jQuery.js", "[net35]\\style.css.pp", "foo.css" },
+                                                        new[] { "net20\\contentFile", "net35\\sub\\jQuery.js", "net35\\style.css.pp", "foo.css" },
                                                         new[] { "reference.dll" });
 
             mockRepository.AddPackage(packageA);
@@ -1576,7 +1576,7 @@ namespace NuGet.Test
             var mockRepository = new MockPackageRepository();
             var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
             var packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                        new[] { "[net20]\\contentFile", "[net35]\\jQuery.js", "foo.css" },
+                                                        new[] { "net20\\contentFile", "net35\\jQuery.js", "foo.css" },
                                                         new[] { "reference.dll" });
             mockRepository.AddPackage(packageA);
             projectManager.AddPackageReference("A");
@@ -1602,7 +1602,7 @@ namespace NuGet.Test
             var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
             var packageA = PackageUtility.CreatePackage("A", "1.0",
                                                         new[] { "contentFiles" },
-                                                        new[] { "lib\\[net35]\\reference.dll", "lib\\[net45]\\bar.dll" });
+                                                        new[] { "lib\\net35\\reference.dll", "lib\\net45\\bar.dll" });
 
             mockRepository.AddPackage(packageA);
 
@@ -1625,7 +1625,7 @@ namespace NuGet.Test
             var mockRepository = new MockPackageRepository();
             var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
             var packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                        new[] { "[net20]\\contentFile", "[net35]\\_._", "foo.css" },
+                                                        new[] { "net20\\contentFile", "net35\\_._", "foo.css" },
                                                         new[] { "reference.dll" });
 
             mockRepository.AddPackage(packageA);
@@ -1648,7 +1648,7 @@ namespace NuGet.Test
             var mockRepository = new MockPackageRepository();
             var projectManager = new ProjectManager(mockRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, localRepository);
             var packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                        new[] { "[sl20]\\contentFile", "[sl20]\\sub\\no.txt", "[sl3]\\_._", "foo.css" },
+                                                        new[] { "sl20\\contentFile", "sl20\\sub\\no.txt", "sl3\\_._", "foo.css" },
                                                         new[] { "reference.dll" });
 
             mockRepository.AddPackage(packageA);
@@ -1744,9 +1744,11 @@ namespace NuGet.Test
             var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
             var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
 
-            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version(dependencyVersion)) });
-            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                                dependencies: new List<PackageDependency> { dependency }, 
+            var dependency = new PackageDependency("B", null);
+            var dependecySets = CreateDependencySet(".NETFramework, Version=" + dependencyVersion, dependency);
+
+            IPackage packageA = PackageUtility.CreatePackage2("A", "1.0",
+                                                                dependencySets: new [] { dependecySets }, 
                                                                 content: new[] { "a.txt" });
 
             IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
@@ -1772,10 +1774,13 @@ namespace NuGet.Test
             var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
             var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
 
-            var dependencyB = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("2.1")) });
-            var dependencyC = new PackageDependency("C", null, new[] { new FrameworkName(".NETFramework", new Version("2.0")) });
-            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                                dependencies: new List<PackageDependency> { dependencyB, dependencyC },
+            var dependencyB = new PackageDependency("B", null);
+            var dependencySetB = CreateDependencySet(".NETFramework, Version=2.1", dependencyB);
+
+            var dependencyC = new PackageDependency("C", null);
+            var dependencySetC = CreateDependencySet(".NETFramework, Version=2.0", dependencyC);
+            IPackage packageA = PackageUtility.CreatePackage2("A", "1.0",
+                                                                dependencySets: new List<PackageDependencySet> { dependencySetB, dependencySetC },
                                                                 content: new[] { "a.txt" });
 
             IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
@@ -1807,15 +1812,18 @@ namespace NuGet.Test
             var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
             var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
 
-            var dependencyB = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("2.1")) });
-            var dependencyC = new PackageDependency("C", null, new[] { new FrameworkName(".NETFramework", new Version("2.0")) });
-            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                                dependencies: new List<PackageDependency> { dependencyB, dependencyC },
+            var dependencyB = new PackageDependency("B", null);
+            var dependencySetB = CreateDependencySet(".NETFramework, Version=2.1", dependencyB);
+
+            var dependencyC = new PackageDependency("C", null);
+            var dependencySetC = CreateDependencySet(".NETFramework, Version=2.0", dependencyC);
+            IPackage packageA = PackageUtility.CreatePackage2("A", "1.0",
+                                                                dependencySets: new List<PackageDependencySet> { dependencySetB, dependencySetC },
                                                                 content: new[] { "a.txt" });
 
             IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
 
-            IPackage packageC = PackageUtility.CreatePackage("C", "2.0", content: new[] { "[sl4]\\c.txt" });
+            IPackage packageC = PackageUtility.CreatePackage("C", "2.0", content: new[] { "sl4\\c.txt" });
 
             sourceRepository.AddPackage(packageB);
             sourceRepository.AddPackage(packageA);
@@ -1844,10 +1852,13 @@ namespace NuGet.Test
             var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
             var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
 
-            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version(dependencyVersion)) });
-            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                                dependencies: new List<PackageDependency> { dependency },
-                                                                content: new[] { "a.txt" });
+            var dependency = new PackageDependency("B", null);
+            var dependencySet = new PackageDependencySet(
+                new FrameworkName(".NETFramework", new Version(dependencyVersion)), 
+                new PackageDependency[] {dependency});
+
+            IPackage packageA = PackageUtility.CreatePackage("A", "1.0", content: new[] { "a.txt" });
+            Mock.Get(packageA).Setup(p => p.DependencySets).Returns(new [] {dependencySet});
 
             IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
 
@@ -1874,9 +1885,12 @@ namespace NuGet.Test
             var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
             var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
 
-            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version(dependencyVersion)) });
-            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                                dependencies: new List<PackageDependency> { dependency },
+            var dependency = new PackageDependency("B", null);
+            var dependencySet = new PackageDependencySet(
+                new FrameworkName(".NETFramework", new Version(dependencyVersion)),
+                new PackageDependency[] { dependency });
+            IPackage packageA = PackageUtility.CreatePackage2("A", "1.0",
+                                                                dependencySets: new List<PackageDependencySet> { dependencySet },
                                                                 content: new[] { "a.txt" });
 
             IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
@@ -1908,10 +1922,14 @@ namespace NuGet.Test
             var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("2.0")));
             var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
 
-            var dependencyB = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("2.1")) });
-            var dependencyC = new PackageDependency("C", null, new[] { new FrameworkName(".NETFramework", new Version("2.0")) });
-            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                                dependencies: new List<PackageDependency> { dependencyB, dependencyC },
+            var dependencyB = new PackageDependency("B", null);
+            var dependencySetB = CreateDependencySet(".NETFramework, Version=2.1", dependencyB);
+
+            var dependencyC = new PackageDependency("C", null);
+            var dependencySetC = CreateDependencySet(".NETFramework, Version=2.0", dependencyC);
+
+            IPackage packageA = PackageUtility.CreatePackage2("A", "1.0",
+                                                                dependencySets: new List<PackageDependencySet> { dependencySetB, dependencySetC },
                                                                 content: new[] { "a.txt" });
 
             IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
@@ -1952,14 +1970,16 @@ namespace NuGet.Test
             var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
             var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
 
-            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("4.5")) });
-            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                             dependencies: new List<PackageDependency> { dependency },
+            var dependency = new PackageDependency("B", null);
+            var dependencySet = CreateDependencySet(".NETFramework, Version=4.5", dependency);
+            IPackage packageA = PackageUtility.CreatePackage2("A", "1.0",
+                                                             dependencySets: new List<PackageDependencySet> { dependencySet },
                                                              content: new[] { "a.txt" });
 
-            var dependency2 = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("4.0")) });
-            IPackage packageA2 = PackageUtility.CreatePackage("A", "2.0",
-                                                                dependencies: new List<PackageDependency> { dependency2 },
+            var dependency2 = new PackageDependency("B", null);
+            var dependencySet2 = CreateDependencySet(".NETFramework, Version=4.0", dependency2);
+            IPackage packageA2 = PackageUtility.CreatePackage2("A", "2.0",
+                                                                dependencySets: new List<PackageDependencySet> { dependencySet2 },
                                                                 content: new[] { "a2.txt" });
 
             IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
@@ -1992,14 +2012,16 @@ namespace NuGet.Test
             var projectSystem = new MockProjectSystem(new FrameworkName(".NETFramework", new Version("4.0")));
             var projectManager = new ProjectManager(sourceRepository, new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
 
-            var dependency = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("4.0")) });
-            IPackage packageA = PackageUtility.CreatePackage("A", "1.0",
-                                                             dependencies: new List<PackageDependency> { dependency },
+            var dependency = new PackageDependency("B", null);
+            var dependencySet = CreateDependencySet(".NETFramework, Version=4.0", dependency);
+            IPackage packageA = PackageUtility.CreatePackage2("A", "1.0",
+                                                             dependencySets: new List<PackageDependencySet> { dependencySet },
                                                              content: new[] { "a.txt" });
 
-            var dependency2 = new PackageDependency("B", null, new[] { new FrameworkName(".NETFramework", new Version("4.5")) });
-            IPackage packageA2 = PackageUtility.CreatePackage("A", "2.0",
-                                                                dependencies: new List<PackageDependency> { dependency2 },
+            var dependency2 = new PackageDependency("B", null);
+            var dependencySet2 = CreateDependencySet(".NETFramework, Version=4.5", dependency2);
+            IPackage packageA2 = PackageUtility.CreatePackage2("A", "2.0",
+                                                                dependencySets: new List<PackageDependencySet> { dependencySet2 },
                                                                 content: new[] { "a2.txt" });
 
             IPackage packageB = PackageUtility.CreatePackage("B", "1.0", content: new[] { "b.txt" });
@@ -2028,6 +2050,12 @@ namespace NuGet.Test
         {
             var projectSystem = new MockProjectSystem();
             return new ProjectManager(new MockPackageRepository(), new DefaultPackagePathResolver(projectSystem), projectSystem, new MockPackageRepository());
+        }
+
+        private static PackageDependencySet CreateDependencySet(
+            string targetFramework, params PackageDependency[] dependencies)
+        {
+            return new PackageDependencySet(new FrameworkName(targetFramework), dependencies);
         }
     }
 }

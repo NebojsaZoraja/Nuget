@@ -174,12 +174,28 @@ namespace NuGet
             return false;
         }
 
+        public static IEnumerable<PackageDependency> GetCompatiblePackageDependencies(this IPackageMetadata package, FrameworkName targetFramework)
+        {
+            IEnumerable<PackageDependencySet> compatibleDependencySets;
+            if (targetFramework == null)
+            {
+                compatibleDependencySets = package.DependencySets;
+            }
+            else if (!VersionUtility.TryGetCompatibleItems(targetFramework, package.DependencySets, out compatibleDependencySets))
+            {
+                compatibleDependencySets = new PackageDependencySet[0];
+            }
+
+            return compatibleDependencySets.SelectMany(d => d.Dependencies);
+        }
+
         /// <summary>
         /// Returns true if a package has dependencies but no files.
         /// </summary>
         public static bool IsDependencyOnly(this IPackage package)
         {
-            return !package.GetFiles().Any() && package.Dependencies.Any();
+            return !package.GetFiles().Any() && 
+                   package.DependencySets.SelectMany(d => d.Dependencies).Any();
         }
 
         public static string GetFullName(this IPackageMetadata package)

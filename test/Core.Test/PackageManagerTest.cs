@@ -532,7 +532,7 @@ namespace NuGet.Test
 
             IPackage packageA = PackageUtility.CreatePackage("A", "1.0.0",
                                                              dependencies: new[] {
-                                                                 new PackageDependency("C", null, new [] { new FrameworkName("Silverlight", new Version("4.0")) })
+                                                                 new PackageDependency("C", null)
                                                              });
 
             IPackage packageC = PackageUtility.CreatePackage("C", "1.0.0");
