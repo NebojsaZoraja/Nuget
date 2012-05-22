@@ -190,7 +190,7 @@ namespace NuGet
         private IEnumerable<IPackage> GetDependents(IPackage package)
         {
             // REVIEW: Perf?
-            return from p in DependentsResolver.GetDependents(package)
+            return from p in DependentsResolver.GetDependents(package, true)
                    where !IsConnected(p)
                    select p;
         }
@@ -203,7 +203,7 @@ namespace NuGet
                 return true;
             }
 
-            IEnumerable<IPackage> dependents = DependentsResolver.GetDependents(package);
+            IEnumerable<IPackage> dependents = DependentsResolver.GetDependents(package, true);
             return dependents.Any() && dependents.All(IsConnected);
         }
     }

@@ -98,6 +98,12 @@ namespace NuGet
             throw new NotSupportedException();
         }
 
+
+        IEnumerable<IPackage> IDependentsResolver.GetDependents(IPackage package, bool skipFailures)
+        {
+            return ((IDependentsResolver)this).GetDependents(package);
+        }
+
         IEnumerable<IPackage> IDependentsResolver.GetDependents(IPackage package)
         {
             HashSet<IPackage> dependents;

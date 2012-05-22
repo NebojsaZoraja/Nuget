@@ -94,7 +94,10 @@ namespace NuGet
                             continue;
                         }
 
-                        return;
+                        // If we're not skipping this is an error in the package config - they need to fix the dependencies.
+                        throw new InvalidOperationException(
+                           String.Format(CultureInfo.CurrentCulture,
+                           NuGetResources.UnableToResolveDependencyForPackage, dependency.Id + " " + dependency.VersionSpec, package.GetFullName()));
                     }
 
                     if (!IgnoreWalkInfo)

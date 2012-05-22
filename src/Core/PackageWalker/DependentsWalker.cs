@@ -38,6 +38,13 @@ namespace NuGet
             private set;
         }
 
+        protected override bool SkipDependencyResolveError
+        {
+            get { return _SkipDependencyResolveError; }
+        }
+
+        private bool _SkipDependencyResolveError;
+
         private IDictionary<IPackage, HashSet<IPackage>> DependentsLookup
         {
             get;
@@ -65,6 +72,20 @@ namespace NuGet
             return base.OnAfterResolveDependency(package, dependency);
         }
 
+
+        public IEnumerable<IPackage> GetDependents(IPackage package, bool skipFailures)
+        {
+            var skip = SkipDependencyResolveError;
+            try
+            {
+                _SkipDependencyResolveError = true;
+                return GetDependents(package);
+            }
+            finally
+            {
+                _SkipDependencyResolveError = skip;
+            }
+        }
 
         public IEnumerable<IPackage> GetDependents(IPackage package)
         {

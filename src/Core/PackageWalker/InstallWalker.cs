@@ -348,7 +348,7 @@ namespace NuGet
             // Skip all dependents that are marked for uninstall
             IEnumerable<IPackage> packages = _operations.GetPackages(PackageAction.Uninstall);
 
-            return conflict.DependentsResolver.GetDependents(conflict.Package)
+            return conflict.DependentsResolver.GetDependents(conflict.Package, true)
                                               .Except(packages, PackageEqualityComparer.IdAndVersion);
         }
 
