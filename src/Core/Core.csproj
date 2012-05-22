@@ -53,6 +53,7 @@
     <Compile Include="Authoring\AssemblyMetadataExtractor.cs" />
     <Compile Include="Authoring\IPackageBuilder.cs" />
     <Compile Include="Authoring\IPropertyProvider.cs" />
+    <Compile Include="Authoring\ManifestDependencySet.cs" />
     <Compile Include="Authoring\ManifestFrameworkAssembly.cs" />
     <Compile Include="Authoring\ManifestDependency.cs" />
     <Compile Include="Authoring\ManifestFile.cs" />
@@ -63,8 +64,7 @@
     <Compile Include="Authoring\ManifestVersionAttribute.cs" />
     <Compile Include="Authoring\ManifestVersionUtility.cs" />
     <Compile Include="Authoring\NullPropertyProvider.cs" />
-    <Compile Include="Configuration\ISettingsProvider.cs" />
-    <Compile Include="Configuration\NuGetConfigSettingsProvider.cs" />
+    <Compile Include="Authoring\PackageDependencySet.cs" />
     <Compile Include="Configuration\SettingsCredentialProvider.cs" />
     <Compile Include="Configuration\ISettings.cs" />
     <Compile Include="Configuration\NullSettings.cs" />
@@ -86,6 +86,7 @@
     <Compile Include="Http\NullCredentialProvider.cs" />
     <Compile Include="Http\ProxyCache.cs" />
     <Compile Include="Http\RequestHelper.cs" />
+    <Compile Include="Http\STSAuthHelper.cs" />
     <Compile Include="IEnvironmentVariableReader.cs" />
     <Compile Include="PackageRestoreConsent.cs" />
     <Compile Include="Packages\LocalPackage.cs" />
@@ -183,6 +184,7 @@
     <Reference Include="System.Data.Services.Client" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Security" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Xml" />

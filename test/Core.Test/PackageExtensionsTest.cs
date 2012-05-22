@@ -1,6 +1,9 @@
 ﻿using System.Linq;
 using Xunit;
 using Xunit.Extensions;
+using System.Runtime.Versioning;
+using System;
+using Moq;
 
 namespace NuGet.Test
 {
@@ -91,6 +94,117 @@ namespace NuGet.Test
 
             // Assert
             Assert.False(satelliteFiles.Select(f => f.Path).Contains(file));
+        }
+
+        [Theory]
+        [InlineData("Init.ps1")]
+        [InlineData("Install.ps1")]
+        [InlineData("Uninstall.ps1")]
+        public void FindCompatiblePowerShellScriptFindScriptsUnderToolsFolder(string scriptName)
+        {
+            // Arrange
+            var targetFramework = new FrameworkName("Silverlight", new Version("2.0"));
+            var package = PackageUtility.CreatePackage("A", "1.0", tools: new[] { scriptName });
+
+            // Act
+            string scriptPath;
+            bool result = package.FindCompatibleToolFiles(scriptName, targetFramework, out scriptPath);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal("tools\\" + scriptName, scriptPath, StringComparer.OrdinalIgnoreCase);
+        }
+
+        [Theory]
+        [InlineData("Init.ps1")]
+        [InlineData("Install.ps1")]
+        [InlineData("Uninstall.ps1")]
+        public void FindCompatiblePowerShellScriptDoesNotFindScriptsOutsideToolsFolder(string scriptName)
+        {
+            // Arrange
+            var targetFramework = new FrameworkName("Silverlight", new Version("2.0"));
+            var package = PackageUtility.CreatePackage("A", "1.0", content: new[] { scriptName });
+
+            // Act
+            string scriptPath;
+            bool result = package.FindCompatibleToolFiles(scriptName, targetFramework, out scriptPath);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void FindCompatiblePowerShellScriptFindScriptsCompatibleWithTargetFramework()
+        {
+            // Arrange
+            var targetFramework = new FrameworkName("Silverlight", new Version("3.5"));
+            var package = PackageUtility.CreatePackage("A", 
+                                                       "1.0", 
+                                                       tools: new[] { "sl3\\install.ps1", "net35\\install.ps1", "[sl40]\\uninstall.ps1" });
+
+            // Act
+            string scriptPath;
+            bool result = package.FindCompatibleToolFiles("install.ps1", targetFramework, out scriptPath);
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal("tools\\sl3\\install.ps1", scriptPath);
+        }
+
+        [Fact]
+        public void FindCompatiblePowerShellScriptDoesNotFindScriptIfTargetFrameworkIsNotCompabitle()
+        {
+            // Arrange
+            var targetFramework = new FrameworkName("Silverlight", new Version("3.5"));
+            var package = PackageUtility.CreatePackage("A",
+                                                       "1.0",
+                                                       tools: new[] { "[netmf]\\install.ps1", "[net35]\\install.ps1", "[sl40]\\install.ps1" });
+
+            // Act
+            string scriptPath;
+            bool result = package.FindCompatibleToolFiles("install.ps1", targetFramework, out scriptPath);
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Theory]
+        [InlineData("content\\_._")]
+        [InlineData("lib\\_._")]
+        [InlineData("content\\sub\\_._")]
+        [InlineData("content\\sub\\child\\_._")]
+        [InlineData("_._")]
+        public void TestIsEmptyFolderReturnTrue(string path)
+        {
+            // Arrange
+            var package = new Mock<IPackageFile>();
+            package.Setup(p => p.Path).Returns(path);
+
+            // Act
+            bool isEmptyFolder = package.Object.IsEmptyFolder();
+
+            // Assert
+            Assert.True(isEmptyFolder);
+        }
+
+        [Theory]
+        [InlineData("content\\_._1")]
+        [InlineData("lib\\one.xml")]
+        [InlineData("content")]
+        [InlineData("content\\sub\\child\\_2._")]
+        [InlineData("_.3_")]
+        [InlineData("___")]
+        public void TestIsEmptyFolderReturnFalse(string path)
+        {
+            // Arrange
+            var package = new Mock<IPackageFile>();
+            package.Setup(p => p.Path).Returns(path);
+
+            // Act
+            bool isEmptyFolder = package.Object.IsEmptyFolder();
+
+            // Assert
+            Assert.False(isEmptyFolder);
         }
     }
 }

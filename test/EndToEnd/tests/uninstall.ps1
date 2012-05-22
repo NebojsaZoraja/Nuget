@@ -92,7 +92,7 @@ function Test-UninstallPackageWithNestedContentFiles {
 
     # Arrange
     $p = New-WebApplication
-    Install-Package NestedFolders -Project $p.Name -Source $context.RepositoryRoot
+    Install-Package NestedFolders -Project $p.Name -Source $context.RepositoryPath
 
     # Act    
     Uninstall-Package NestedFolders -Project $p.Name
@@ -319,11 +319,11 @@ function Test-UninstallPackageAfterRenaming {
     $p2 = $f | New-ClassLibrary 'ProjectB'
 
     # Act
-    $p1 | Install-Package NestedFolders -Source $context.RepositoryRoot 
+    $p1 | Install-Package NestedFolders -Source $context.RepositoryPath 
     $p1.Name = "ProjectX"
     Uninstall-Package NestedFolders -Project Folder1\Folder2\ProjectX
 
-    $p2 | Install-Package NestedFolders -Source $context.RepositoryRoot 
+    $p2 | Install-Package NestedFolders -Source $context.RepositoryPath 
     $f.Name = "Folder3"
     Uninstall-Package NestedFolders -Project Folder1\Folder3\ProjectB
 
@@ -740,17 +740,72 @@ function Test-UninstallingSatellitePackageThenRuntimePackageRemoveCollidingRunti
 
 function Test-WebSiteSimpleUninstall
 {
-	param(
-		$context
-	)
+    param(
+        $context
+    )
 
-	# Arrange
-	$p = New-Website
-	
-	# Act
-	$p | Install-Package MyAwesomeLibrary -Source $context.RepositoryRoot
-	$p | Uninstall-Package MyAwesomeLibrary
+    # Arrange
+    $p = New-Website
+    
+    # Act
+    $p | Install-Package MyAwesomeLibrary -Source $context.RepositoryRoot
+    $p | Uninstall-Package MyAwesomeLibrary
 
-	# Assert
-	Assert-PathNotExists (Join-Path $p.FullName "bin\AwesomeLibrary.dll.refresh")
+    # Assert
+    Assert-PathNotExists (Join-Path $p.FullName "bin\AwesomeLibrary.dll.refresh")
+}
+
+function Test-UninstallPackageUninstallContentFilesAccordingToTargetFramework {
+    param($context)
+
+    # Arrange
+    $project = New-ConsoleApplication
+    
+    Install-Package TestTargetFxContentFiles -Project $project.Name -Source $context.RepositoryRoot
+    
+    Assert-Package $project TestTargetFxContentFiles
+    Assert-NotNull (Get-ProjectItem $project "Sub\one.txt")
+    Assert-Null (Get-ProjectItem $project "two.txt")
+
+    # Act
+    Uninstall-Package TestTargetFxContentFiles -Project $project.Name
+    Assert-Null (Get-ProjectItem $project "Sub\one.txt")
+}
+
+function Test-UninstallPackageExecuteCorrectUninstallScriptsAccordingToTargetFramework {
+    param($context)
+
+    # Arrange
+    $project = New-ConsoleApplication
+    
+    $global:UninstallVar = 0
+    Install-Package TestTargetFxPSScripts -Project $project.Name -Source $context.RepositoryRoot
+
+    # Act
+    Uninstall-Package TestTargetFxPSScripts -Project $project.Name
+
+    # Assert
+    Assert-True ($global:UninstallVar -eq 3)
+
+    # Clean up
+    Remove-Variable UnInstallVar -Scope Global
+}
+
+function Test-UninstallPackageExecuteCorrectUninstallScriptsAccordingToTargetFramework2 {
+    param($context)
+
+    # Arrange
+    $project = New-SilverlightApplication
+    
+    $global:UnInstallVar = 0
+    Install-Package TestTargetFxPSScripts -Project $project.Name -Source $context.RepositoryRoot
+
+    # Act
+    Uninstall-Package TestTargetFxPSScripts -Project $project.Name
+    
+    # Assert
+    Assert-True ($global:UnInstallVar -eq 300)
+
+    # Clean up
+    Remove-Variable UnInstallVar -Scope Global
 }

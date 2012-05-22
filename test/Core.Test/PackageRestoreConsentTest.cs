@@ -106,6 +106,37 @@ namespace NuGet.Test
             Assert.True(isGranted);
         }
 
+        [Theory]
+        [InlineData("", null, false)]
+        [InlineData("  ", null, false)]
+        [InlineData("0", "true", false)]
+        [InlineData("blah", null, false)]
+        [InlineData("", "false", false)]
+        [InlineData("   ", "false", false)]
+        [InlineData("   ", "0", false)]
+        [InlineData("", "true", true)]
+        [InlineData("   ", "true", true)]
+        [InlineData("blah", "true", false)]
+        public void IsGrantedFallsBackToEnvironmentVariableIfSettingsValueIsEmptyOfWhitespaceString(string settingsValue, string environmentValue, bool expected)
+        {
+            // Arrange
+            var settings = new Mock<ISettings>(MockBehavior.Strict);
+            settings.Setup(s => s.GetValue("packageRestore", "enabled")).Returns(settingsValue);
+
+            var environmentReader = new Mock<IEnvironmentVariableReader>();
+            environmentReader.Setup(
+                r => r.GetEnvironmentVariable("EnableNuGetPackageRestore")).
+                Returns(environmentValue);
+
+            var packageRestore = new PackageRestoreConsent(settings.Object, environmentReader.Object);
+
+            // Act
+            bool isGranted = packageRestore.IsGranted;
+
+            // Assert
+            Assert.Equal(expected, isGranted);
+        }
+
         [Fact]
         public void SettingIsGrantedToFalseDeleteTheSectionInConfigFile()
         {
@@ -120,11 +151,11 @@ namespace NuGet.Test
             packageRestore.IsGranted = false;
 
             // Assert
-            settings.Verify(s => s.DeleteSection("packageRestore"), Times.Once());
+            settings.Verify(s => s.SetValue("packageRestore", "enabled", "False"), Times.Once());
         }
 
         [Fact]
-        public void SettingIsGrantedToTrueSetTheFlagInConfigFile()
+        public void SettingIsGrantedToTrueSetsTheFlagInConfigFile()
         {
             // Arrange
             var settings = new Mock<ISettings>();
@@ -137,7 +168,7 @@ namespace NuGet.Test
             packageRestore.IsGranted = true;
 
             // Assert
-            settings.Verify(s => s.SetValue("packageRestore", "enabled", "true"), Times.Once());
+            settings.Verify(s => s.SetValue("packageRestore", "enabled", "True"), Times.Once());
         }
     }
 }

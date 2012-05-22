@@ -78,7 +78,11 @@ namespace NuGet.Commands
                 {
                     manifest.Metadata.Authors = Environment.UserName;
                 }
-                manifest.Metadata.Dependencies = new List<ManifestDependency> {SampleManifestDependency};
+                manifest.Metadata.DependencySets = new List<ManifestDependencySet>();
+                manifest.Metadata.DependencySets.Add(new ManifestDependencySet
+                                                        {
+                                                            Dependencies = new List<ManifestDependency> { SampleManifestDependency }
+                                                        });
             }
 
             manifest.Metadata.ProjectUrl = SampleProjectUrl;
@@ -100,7 +104,7 @@ namespace NuGet.Commands
                 {
                     using (var stream = new MemoryStream())
                     {
-                        manifest.Save(stream, validate: false);
+                        manifest.Save(stream, validate: false, minimumManifestVersion: 1);
                         stream.Seek(0, SeekOrigin.Begin);
                         string content = stream.ReadToEnd();
                         File.WriteAllText(nuspecFile, RemoveSchemaNamespace(content));

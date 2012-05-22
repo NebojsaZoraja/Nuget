@@ -656,6 +656,15 @@ namespace NuGet.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Connection to feed &apos;{0}&apos; requires the Windows Identity Foundation runtime to be installed. .
+        /// </summary>
+        internal static string UnableToLocateWIF {
+            get {
+                return ResourceManager.GetString("UnableToLocateWIF", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unable to resolve dependency &apos;{0}&apos;..
         /// </summary>
         internal static string UnableToResolveDependency {

@@ -25,6 +25,11 @@ namespace NuGet
             return package.Listed || package.Published > Constants.Unpublished;
         }
 
+        public static bool IsEmptyFolder(this IPackageFile packageFile)
+        {
+            return packageFile != null && Path.GetFileName(packageFile.Path) == Constants.PackageEmptyFileName;
+        }
+
         public static IEnumerable<IPackage> FindByVersion(this IEnumerable<IPackage> source, IVersionSpec versionSpec)
         {
             if (versionSpec == null)
@@ -43,6 +48,11 @@ namespace NuGet
         public static IEnumerable<IPackageFile> GetContentFiles(this IPackage package)
         {
             return package.GetFiles(Constants.ContentDirectory);
+        }
+
+        public static IEnumerable<IPackageFile> GetToolFiles(this IPackage package)
+        {
+            return package.GetFiles(Constants.ToolsDirectory);
         }
 
         public static IEnumerable<IPackageFile> GetLibFiles(this IPackage package)
@@ -117,10 +127,66 @@ namespace NuGet
 
         public static IEnumerable<FrameworkName> GetSupportedFrameworks(this IPackage package)
         {
+            // The supported frameworks of a package is the union of the supported frameworks
+            // of Content/Lib/Tools folders and those of Framework Assemblies.
             return package.FrameworkAssemblies
                           .SelectMany(a => a.SupportedFrameworks)
-                          .Concat(package.AssemblyReferences.SelectMany(a => a.SupportedFrameworks))
+                          .Concat(package.GetFiles().SelectMany(a => a.SupportedFrameworks))
                           .Distinct();
+        }
+
+        // the returned scriptPath is the relative path inside the package
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "3#")]
+        public static bool FindCompatibleToolFiles(
+            this IPackage package,
+            string scriptName,
+            FrameworkName targetFramework,
+            out string toolFilePath)
+        {
+            if (scriptName.Equals("init.ps1", StringComparison.OrdinalIgnoreCase))
+            {
+                IPackageFile initFile = package.GetToolFiles()
+                                               .FirstOrDefault(a => a.Path.Equals("tools\\init.ps1", StringComparison.OrdinalIgnoreCase));
+                if (initFile != null)
+                {
+                    toolFilePath = "tools\\init.ps1";
+                    return true;
+                }
+
+                toolFilePath = null;
+                return false;
+            }
+
+            // this is the case for either install.ps1 or uninstall.ps1
+            // search for the correct script according to target framework of the project
+            IEnumerable<IPackageFile> toolFiles;
+            if (VersionUtility.TryGetCompatibleItems(targetFramework, package.GetToolFiles(), out toolFiles))
+            {
+                IPackageFile foundToolFile = toolFiles.FirstOrDefault(p => p.EffectivePath.Equals(scriptName, StringComparison.OrdinalIgnoreCase));
+                if (foundToolFile != null && !foundToolFile.IsEmptyFolder())
+                {
+                    toolFilePath = foundToolFile.Path;
+                    return true;
+                }
+            }
+
+            toolFilePath = null;
+            return false;
+        }
+
+        public static IEnumerable<PackageDependency> GetCompatiblePackageDependencies(this IPackageMetadata package, FrameworkName targetFramework)
+        {
+            IEnumerable<PackageDependencySet> compatibleDependencySets;
+            if (targetFramework == null)
+            {
+                compatibleDependencySets = package.DependencySets;
+            }
+            else if (!VersionUtility.TryGetCompatibleItems(targetFramework, package.DependencySets, out compatibleDependencySets))
+            {
+                compatibleDependencySets = new PackageDependencySet[0];
+            }
+
+            return compatibleDependencySets.SelectMany(d => d.Dependencies);
         }
 
         /// <summary>
@@ -128,7 +194,8 @@ namespace NuGet
         /// </summary>
         public static bool IsDependencyOnly(this IPackage package)
         {
-            return !package.GetFiles().Any() && package.Dependencies.Any();
+            return !package.GetFiles().Any() && 
+                   package.DependencySets.SelectMany(d => d.Dependencies).Any();
         }
 
         public static string GetFullName(this IPackageMetadata package)

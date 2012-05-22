@@ -236,11 +236,12 @@ namespace NuGet
                                                                    IPackageConstraintProvider constraintProvider,
                                                                    IEnumerable<string> packageIds,
                                                                    IPackage package,
+                                                                   FrameworkName targetFramework,
                                                                    bool allowPrereleaseVersions)
         {
             return (from p in repository.FindPackages(packageIds)
                     where allowPrereleaseVersions || p.IsReleaseVersion()
-                    let dependency = p.FindDependency(package.Id)
+                    let dependency = p.FindDependency(package.Id, targetFramework)
                     let otherConstaint = constraintProvider.GetConstraint(p.Id)
                     where dependency != null &&
                           dependency.VersionSpec.Satisfies(package.Version) &&
@@ -248,9 +249,9 @@ namespace NuGet
                     select p);
         }
 
-        public static PackageDependency FindDependency(this IPackageMetadata package, string packageId)
+        public static PackageDependency FindDependency(this IPackageMetadata package, string packageId, FrameworkName targetFramework)
         {
-            return (from dependency in package.Dependencies
+            return (from dependency in package.GetCompatiblePackageDependencies(targetFramework)
                     where dependency.Id.Equals(packageId, StringComparison.OrdinalIgnoreCase)
                     select dependency).FirstOrDefault();
         }
@@ -367,10 +368,10 @@ namespace NuGet
                                                     repository.GetUpdatesCore(packages, includePrerelease, includeAllVersions, targetFramework);
         }
 
-        public static IEnumerable<IPackage> GetUpdatesCore(this IPackageRepository repository, IEnumerable<IPackage> packages, bool includePrerelease, bool includeAllVersions, 
+        public static IEnumerable<IPackage> GetUpdatesCore(this IPackageRepository repository, IEnumerable<IPackageMetadata> packages, bool includePrerelease, bool includeAllVersions, 
             IEnumerable<FrameworkName> targetFramework)
         {
-            List<IPackage> packageList = packages.ToList();
+            List<IPackageMetadata> packageList = packages.ToList();
 
             if (!packageList.Any())
             {
@@ -417,7 +418,7 @@ namespace NuGet
         /// </summary>
         private static IEnumerable<IPackage> GetUpdateCandidates(
             IPackageRepository repository,
-            IEnumerable<IPackage> packages,
+            IEnumerable<IPackageMetadata> packages,
             bool includePrerelease)
         {
 
@@ -437,7 +438,7 @@ namespace NuGet
         /// For the list of input packages generate an expression like:
         /// p => p.Id == 'package1id' or p.Id == 'package2id' or p.Id == 'package3id'... up to package n
         /// </summary>
-        private static Expression<Func<IPackage, bool>> GetFilterExpression(IEnumerable<IPackage> packages)
+        private static Expression<Func<IPackage, bool>> GetFilterExpression(IEnumerable<IPackageMetadata> packages)
         {
             return GetFilterExpression(packages.Select(p => p.Id));
         }
