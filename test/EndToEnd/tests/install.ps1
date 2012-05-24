@@ -1694,7 +1694,7 @@ function Test-InstallPackageInstallContentFilesAccordingToTargetFramework {
     $project = New-ConsoleApplication
     
     # Act
-    Install-Package TestTargetFxContentFiles -Project $project.Name -Source $context.RepositoryRoot
+    Install-Package TestTargetFxContentFiles -Project $project.Name -Source $context.RepositoryPath
     
     # Assert
     Assert-Package $project TestTargetFxContentFiles
@@ -1709,7 +1709,7 @@ function Test-InstallPackageInstallContentFilesAccordingToTargetFramework2 {
     $project = New-SilverlightClassLibrary
     
     # Act
-    Install-Package TestTargetFxContentFiles -Project $project.Name -Source $context.RepositoryRoot
+    Install-Package TestTargetFxContentFiles -Project $project.Name -Source $context.RepositoryPath
     
     # Assert
     Assert-Package $project TestTargetFxContentFiles
@@ -1726,7 +1726,7 @@ function Test-InstallPackageExecuteCorrectInstallScriptsAccordingToTargetFramewo
     $global:InstallVar = 0
 
     # Act
-    Install-Package TestTargetFxPSScripts -Project $project.Name -Source $context.RepositoryRoot
+    Install-Package TestTargetFxPSScripts -Project $project.Name -Source $context.RepositoryPath
     
     # Assert
     Assert-Package $project TestTargetFxPSScripts
@@ -1745,7 +1745,7 @@ function Test-InstallPackageExecuteCorrectInstallScriptsAccordingToTargetFramewo
     $global:InstallVar = 0
 
     # Act
-    Install-Package TestTargetFxPSScripts -Project $project.Name -Source $context.RepositoryRoot
+    Install-Package TestTargetFxPSScripts -Project $project.Name -Source $context.RepositoryPath
     
     # Assert
     Assert-Package $project TestTargetFxPSScripts
@@ -1764,7 +1764,7 @@ function Test-InstallPackageIgnoreInitScriptIfItIsNotDirectlyUnderTools {
     $global:InitVar = 0
 
     # Act
-    Install-Package TestTargetFxInvalidInitScript -Project $project.Name -Source $context.RepositoryRoot
+    Install-Package TestTargetFxInvalidInitScript -Project $project.Name -Source $context.RepositoryPath
     
     # Assert
     Assert-Package $project TestTargetFxInvalidInitScript
@@ -1783,7 +1783,7 @@ function Test-InstallPackageIgnoreInitScriptIfItIsNotDirectlyUnderTools2 {
     $global:InitVar = 0
 
     # Act
-    Install-Package TestTargetFxInvalidInitScript -Project $project.Name -Source $context.RepositoryRoot
+    Install-Package TestTargetFxInvalidInitScript -Project $project.Name -Source $context.RepositoryPath
     
     # Assert
     Assert-Package $project TestTargetFxInvalidInitScript
@@ -1801,7 +1801,7 @@ function Test-InstallPackageWithEmptyContentFrameworkFolder
 	$project = New-ClassLibrary
 
 	# Act
-	Install-Package TestEmptyContentFolder -Project $project.Name -Source $context.RepositoryRoot
+	Install-Package TestEmptyContentFolder -Project $project.Name -Source $context.RepositoryPath
 
 	# Assert
 	Assert-Package $project TestEmptyContentFolder
@@ -1816,7 +1816,7 @@ function Test-InstallPackageWithEmptyLibFrameworkFolder
 	$project = New-ClassLibrary
 
 	# Act
-	Install-Package TestEmptyLibFolder -Project $project.Name -Source $context.RepositoryRoot
+	Install-Package TestEmptyLibFolder -Project $project.Name -Source $context.RepositoryPath
 
 	# Assert
 	Assert-Package $project TestEmptyLibFolder
@@ -1833,7 +1833,7 @@ function Test-InstallPackageWithEmptyToolsFrameworkFolder
 	$global:InstallVar = 0
 
 	# Act
-	Install-Package TestEmptyToolsFolder -Project $project.Name -Source $context.RepositoryRoot
+	Install-Package TestEmptyToolsFolder -Project $project.Name -Source $context.RepositoryPath
 
 	# Assert
 	Assert-Package $project TestEmptyToolsFolder
@@ -1853,7 +1853,7 @@ function Test-InstallPackageInstallCorrectDependencyPackageBasedOnTargetFramewor
 	$global:InstallVar = 0
 
 	# Act
-	Install-Package TestDependencyTargetFramework -Project $project.Name -Source $context.RepositoryRoot
+	Install-Package TestDependencyTargetFramework -Project $project.Name -Source $context.RepositoryPath
 
 	# Assert
 	Assert-Package $project TestDependencyTargetFramework

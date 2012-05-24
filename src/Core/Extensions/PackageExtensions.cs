@@ -27,7 +27,8 @@ namespace NuGet
 
         public static bool IsEmptyFolder(this IPackageFile packageFile)
         {
-            return packageFile != null && Path.GetFileName(packageFile.Path) == Constants.PackageEmptyFileName;
+            return packageFile != null && 
+                   Constants.PackageEmptyFileName.Equals(Path.GetFileName(packageFile.Path), StringComparison.OrdinalIgnoreCase);
         }
 
         public static IEnumerable<IPackage> FindByVersion(this IEnumerable<IPackage> source, IVersionSpec versionSpec)
@@ -133,45 +134,6 @@ namespace NuGet
                           .SelectMany(a => a.SupportedFrameworks)
                           .Concat(package.GetFiles().SelectMany(a => a.SupportedFrameworks))
                           .Distinct();
-        }
-
-        // the returned scriptPath is the relative path inside the package
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "3#")]
-        public static bool FindCompatibleToolFiles(
-            this IPackage package,
-            string scriptName,
-            FrameworkName targetFramework,
-            out string toolFilePath)
-        {
-            if (scriptName.Equals("init.ps1", StringComparison.OrdinalIgnoreCase))
-            {
-                IPackageFile initFile = package.GetToolFiles()
-                                               .FirstOrDefault(a => a.Path.Equals("tools\\init.ps1", StringComparison.OrdinalIgnoreCase));
-                if (initFile != null)
-                {
-                    toolFilePath = "tools\\init.ps1";
-                    return true;
-                }
-
-                toolFilePath = null;
-                return false;
-            }
-
-            // this is the case for either install.ps1 or uninstall.ps1
-            // search for the correct script according to target framework of the project
-            IEnumerable<IPackageFile> toolFiles;
-            if (VersionUtility.TryGetCompatibleItems(targetFramework, package.GetToolFiles(), out toolFiles))
-            {
-                IPackageFile foundToolFile = toolFiles.FirstOrDefault(p => p.EffectivePath.Equals(scriptName, StringComparison.OrdinalIgnoreCase));
-                if (foundToolFile != null && !foundToolFile.IsEmptyFolder())
-                {
-                    toolFilePath = foundToolFile.Path;
-                    return true;
-                }
-            }
-
-            toolFilePath = null;
-            return false;
         }
 
         public static IEnumerable<PackageDependency> GetCompatiblePackageDependencies(this IPackageMetadata package, FrameworkName targetFramework)

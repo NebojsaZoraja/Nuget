@@ -40,9 +40,19 @@ namespace NuGet
             Save(stream, validate: true, minimumManifestVersion: 1);
         }
 
+        /// <summary>
+        /// Saves the current manifest to the specified stream.
+        /// </summary>
+        /// <param name="stream">The target stream.</param>
+        /// <param name="minimumManifestVersion">The minimum manifest version that this class must use when saving.</param>
         public void Save(Stream stream, int minimumManifestVersion)
         {
             Save(stream, validate: true, minimumManifestVersion: minimumManifestVersion);
+        }
+
+        public void Save(Stream stream, bool validate)
+        {
+            Save(stream, validate, minimumManifestVersion: 1);
         }
 
         public void Save(Stream stream, bool validate, int minimumManifestVersion)
@@ -163,7 +173,7 @@ namespace NuGet
             return (from dependencySet in metadata.DependencySets
                     select new ManifestDependencySet
                     {
-                        TargetFramework = dependencySet.TargetFramework != null ? dependencySet.TargetFramework.ToString() : null,
+                        TargetFramework = dependencySet.TargetFramework != null ? VersionUtility.GetFrameworkString(dependencySet.TargetFramework) : null,
                         Dependencies = CreateDependencies(dependencySet.Dependencies)
                     }).ToList();
         }

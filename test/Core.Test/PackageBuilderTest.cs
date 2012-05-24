@@ -224,7 +224,7 @@ namespace NuGet.Test
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Descriptions</description>
     <dependencies>
-      <group targetFramework=""Silverlight,Version=v4.0"">
+      <group targetFramework=""Silverlight4.0"">
         <dependency id=""B"" />
       </group>
     </dependencies>

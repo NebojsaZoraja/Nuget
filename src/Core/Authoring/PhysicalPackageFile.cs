@@ -40,7 +40,7 @@ namespace NuGet
             }
             set
             {
-                if (_targetPath != value)
+                if (String.Compare(_targetPath, value, StringComparison.OrdinalIgnoreCase) != 0)
                 {
                     _targetPath = value;
                     string effectivePath;

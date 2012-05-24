@@ -971,7 +971,7 @@ function Test-UpdatePackageInstallCorrectDependencyPackageBasedOnTargetFramework
 
 	$global:InstallVar = 0
 
-	Install-Package TestDependencyTargetFramework -Version 1.0 -Project $project.Name -Source $context.RepositoryRoot
+	Install-Package TestDependencyTargetFramework -Version 1.0 -Project $project.Name -Source $context.RepositoryPath
 
 	Assert-Package $project TestDependencyTargetFramework -Version 1.0
 	Assert-Package $project TestEmptyLibFolder
@@ -979,7 +979,7 @@ function Test-UpdatePackageInstallCorrectDependencyPackageBasedOnTargetFramework
 	Assert-NoPackage $project TestEmptyToolsFolder
 
 	# Act
-	Update-Package TestDependencyTargetFramework -Version 2.0 -Project $project.Name -Source $context.RepositoryRoot
+	Update-Package TestDependencyTargetFramework -Version 2.0 -Project $project.Name -Source $context.RepositoryPath
 
 	# Assert
 	Assert-Package $project TestDependencyTargetFramework -Version 2.0

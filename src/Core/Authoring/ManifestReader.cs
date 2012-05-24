@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
-using System;
+using NuGet.Resources;
 
 namespace NuGet
 {
@@ -10,18 +11,14 @@ namespace NuGet
     {
         public static Manifest ReadManifest(XDocument document)
         {
-            string documentNamespace = document.Root.GetDefaultNamespace().NamespaceName;
-            int manifestVersion = ManifestSchemaUtility.GetVersionFromNamespace(documentNamespace);
-            bool dependencyHasGroups = manifestVersion >= ManifestSchemaUtility.TargetFrameworkInDependencyMinVersion;
-
             return new Manifest
             {
-                Metadata = ReadMetadata(document.Root.ElementsNoNamespace("metadata").First(), dependencyHasGroups),
+                Metadata = ReadMetadata(document.Root.ElementsNoNamespace("metadata").First()),
                 Files = ReadFilesList(document.Root.ElementsNoNamespace("files").FirstOrDefault())
             };
         }
 
-        private static ManifestMetadata ReadMetadata(XElement xElement, bool dependencyHasGroups)
+        private static ManifestMetadata ReadMetadata(XElement xElement)
         {
             var manifestMetadata = new ManifestMetadata();
             manifestMetadata.DependencySets = new List<ManifestDependencySet>();
@@ -32,7 +29,7 @@ namespace NuGet
                 var element = node as XElement;
                 if (element != null)
                 {
-                    ReadMetadataValue(manifestMetadata, element, dependencyHasGroups);
+                    ReadMetadataValue(manifestMetadata, element);
                 }
                 node = node.NextNode;
             }
@@ -40,7 +37,7 @@ namespace NuGet
             return manifestMetadata;
         }
 
-        private static void ReadMetadataValue(ManifestMetadata manifestMetadata, XElement element, bool dependencyHasGroups)
+        private static void ReadMetadataValue(ManifestMetadata manifestMetadata, XElement element)
         {
             if (element.Value == null)
             {
@@ -96,7 +93,7 @@ namespace NuGet
                     manifestMetadata.Tags = value;
                     break;
                 case "dependencies":
-                    manifestMetadata.DependencySets = ReadDependencySet(element, dependencyHasGroups);
+                    manifestMetadata.DependencySets = ReadDependencySet(element);
                     break;
                 case "frameworkAssemblies":
                     manifestMetadata.FrameworkAssemblies = ReadFrameworkAssemblies(element);
@@ -134,34 +131,40 @@ namespace NuGet
                     }).ToList();
         }
 
-        private static List<ManifestDependencySet> ReadDependencySet(XElement dependenciesElement, bool dependencyHasGroups)
+        private static List<ManifestDependencySet> ReadDependencySet(XElement dependenciesElement)
         {
-            if (dependencyHasGroups)
+            if (!dependenciesElement.HasElements)
             {
-                // each element is <group>, <dependency> is child of <group> 
-                return (from element in dependenciesElement.ElementsNoNamespace("group")
+                return new List<ManifestDependencySet>();
+            }
+
+            // Disallow the <dependencies> element to contain both <dependency> and 
+            // <group> child elements. Unfortunately, this cannot be enforced by XSD.
+            if (dependenciesElement.ElementsNoNamespace("dependency").Any() &&
+                dependenciesElement.ElementsNoNamespace("group").Any())
+            {
+                throw new InvalidDataException(NuGetResources.Manifest_DependenciesHasMixedElements);
+            }
+
+            var dependencies = ReadDependencies(dependenciesElement);
+            if (dependencies.Count > 0)
+            {
+                // old format, <dependency> is direct child of <dependencies>
+                var dependencySet = new ManifestDependencySet
+                {
+                    Dependencies = dependencies
+                };
+                return new List<ManifestDependencySet> { dependencySet };
+            }
+            else
+            {
+                var groups = dependenciesElement.ElementsNoNamespace("group");
+                return (from element in groups
                         select new ManifestDependencySet
                         {
                             TargetFramework = element.GetOptionalAttributeValue("targetFramework").SafeTrim(),
                             Dependencies = ReadDependencies(element)
                         }).ToList();
-            }
-            else
-            {
-                var dependencies = ReadDependencies(dependenciesElement);
-                if (dependencies.Count > 0)
-                {
-                    // old format, <dependency> is direct child of <dependencies>
-                    var dependencySet = new ManifestDependencySet
-                    {
-                        Dependencies = ReadDependencies(dependenciesElement)
-                    };
-                    return new List<ManifestDependencySet> { dependencySet };
-                }
-                else
-                {
-                    return new List<ManifestDependencySet>();
-                }
             }
         }
 

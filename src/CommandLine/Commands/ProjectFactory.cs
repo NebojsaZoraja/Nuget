@@ -408,7 +408,7 @@ namespace NuGet.Commands
                 dependencies[dependency.Id] = dependency;
             }
 
-            // TO FIX: when we persis the target framework into packages.config file, 
+            // TO FIX: when we persist the target framework into packages.config file, 
             // we need to pull that info into building the PackageDependencySet object
             builder.DependencySets.Clear();
             builder.DependencySets.Add(new PackageDependencySet(null, dependencies.Values));

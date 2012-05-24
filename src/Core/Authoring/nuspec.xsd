@@ -13,7 +13,7 @@
 
     <xs:complexType name="dependencyGroup">
         <xs:sequence>
-            <xs:element name="group" minOccurs="0" maxOccurs="unbounded" type="dependency">
+            <xs:element name="dependency" minOccurs="0" maxOccurs="unbounded" type="dependency">
             </xs:element>
         </xs:sequence>
         <xs:attribute name="targetFramework" type="xs:string" use="optional" />
