@@ -54,6 +54,11 @@ namespace NuGet.Common
             return Project.GetPropertyValue(propertyName);
         }
 
+        public bool IsProjectReference(string name)
+        {
+            return false;
+        }
+
         public bool IsSupportedFile(string path)
         {
             return true;
