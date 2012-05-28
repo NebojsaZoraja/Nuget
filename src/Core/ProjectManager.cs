@@ -256,6 +256,10 @@ namespace NuGet
 
                     if (Project.ReferenceExists(assemblyReference.Name))
                     {
+                        if (Project.IsProjectReference(assemblyReference.Name))
+                        {
+                            continue; // If it's a project in the solution we don't bother changing it.
+                        }
                         Project.RemoveReference(assemblyReference.Name);
                     }
 

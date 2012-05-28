@@ -21,6 +21,7 @@ namespace NuGet
         void AddFrameworkReference(string name);
         bool ReferenceExists(string name);
         void RemoveReference(string name);
+        bool IsProjectReference(string name);
         bool IsSupportedFile(string path);
         string ResolvePath(string path);
         bool IsBindingRedirectSupported { get; }

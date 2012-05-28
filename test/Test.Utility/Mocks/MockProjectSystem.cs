@@ -51,6 +51,11 @@ namespace NuGet.Test.Mocks
             DeleteFile(name);
         }
 
+        public bool IsProjectReference(string name)
+        {
+            return false;
+        }
+
         public virtual bool ReferenceExists(string name)
         {
             return References.ContainsKey(name);

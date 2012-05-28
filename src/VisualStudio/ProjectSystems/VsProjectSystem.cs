@@ -256,6 +256,27 @@ namespace NuGet.VisualStudio
             }
         }
 
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "We never want to fail when checking for existance")]
+        public bool IsProjectReference(string name)
+        {
+            try
+            {
+                string referenceName = name;
+
+                if (Constants.AssemblyReferencesExtensions.Contains(Path.GetExtension(name), StringComparer.OrdinalIgnoreCase))
+                {
+                    // Get the reference name without extension
+                    referenceName = Path.GetFileNameWithoutExtension(name);
+                }
+
+                return ((VSProject)Project.Object).References.Item(referenceName).SourceProject != null;
+            }
+            catch
+            {
+            }
+            return false;
+        }
+
         private bool FileExistsInProject(string path)
         {
             return Project.GetProjectItem(path) != null;
@@ -333,8 +354,7 @@ namespace NuGet.VisualStudio
                     // Get the reference name without extension
                     referenceName = Path.GetFileNameWithoutExtension(name);
                 }
-
-                return Project.Object.References.Item(referenceName) != null;
+                                return Project.Object.References.Item(referenceName) != null;
             }
             catch
             {
