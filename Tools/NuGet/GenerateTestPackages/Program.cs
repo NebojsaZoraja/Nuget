@@ -59,7 +59,7 @@ namespace GenerateTestPackages
                         Directory.CreateDirectory(outputDir);
                     }
 
-                    if (file.Source.StartsWith(@"lib" + Path.DirectorySeparatorChar))
+                    if (file.Source.StartsWith(@"lib" + Path.DirectorySeparatorChar) && !file.Source.EndsWith("resources.dll"))
                     {
                         var name = Path.GetFileNameWithoutExtension(file.Source);
                         CreateAssembly(new PackageInfo(manifest.Metadata.Id + ":" + manifest.Metadata.Version),
@@ -234,9 +234,10 @@ namespace GenerateTestPackages
                 TargetPath = @"lib\" + Path.GetFileName(assemblySourcePath)
             });
 
-            var set = new PackageDependencySet(VersionUtility.DefaultTargetFramework, 
-                package.Dependencies.Select(dependency => new PackageDependency(dependency.Id, dependency.VersionSpec)));
-            packageBuilder.DependencySets.Add(set);
+            foreach (DependencyInfo dependency in package.Dependencies)
+            {
+                packageBuilder.Dependencies.Add(new PackageDependency(dependency.Id, dependency.VersionSpec));
+            }
 
             using (var stream = File.Create(GetPackageFileFullPath(package)))
             {

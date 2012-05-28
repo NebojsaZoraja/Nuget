@@ -1640,8 +1640,6 @@ function Test-InstallWithConflictDoesNotUpdateToPrerelease {
         $context
     )
 
-    Write-Host $context.RepositoryPath
-
     # Arrange
     $a = New-ClassLibrary
 
@@ -1686,178 +1684,23 @@ function Test-ReinstallingAnUninstallPackageIsNotExcessivelyCached {
 	# Assert 3
 	Assert-Package $a netfx-Guard 1.2 
 }
-
-function Test-InstallPackageInstallContentFilesAccordingToTargetFramework {
-    param($context)
-
-    # Arrange
-    $project = New-ConsoleApplication
-    
-    # Act
-    Install-Package TestTargetFxContentFiles -Project $project.Name -Source $context.RepositoryPath
-    
-    # Assert
-    Assert-Package $project TestTargetFxContentFiles
-    Assert-NotNull (Get-ProjectItem $project "Sub\one.txt")
-    Assert-Null (Get-ProjectItem $project "two.txt")
-}
-
-function Test-InstallPackageInstallContentFilesAccordingToTargetFramework2 {
-    param($context)
-
-    # Arrange
-    $project = New-SilverlightClassLibrary
-    
-    # Act
-    Install-Package TestTargetFxContentFiles -Project $project.Name -Source $context.RepositoryPath
-    
-    # Assert
-    Assert-Package $project TestTargetFxContentFiles
-    Assert-Null (Get-ProjectItem $project "Sub\one.txt")
-    Assert-Null (Get-ProjectItem $project "two.txt")
-}
-
-function Test-InstallPackageExecuteCorrectInstallScriptsAccordingToTargetFramework {
-    param($context)
-
-    # Arrange
-    $project = New-ConsoleApplication
-    
-    $global:InstallVar = 0
-
-    # Act
-    Install-Package TestTargetFxPSScripts -Project $project.Name -Source $context.RepositoryPath
-    
-    # Assert
-    Assert-Package $project TestTargetFxPSScripts
-    Assert-True ($global:InstallVar -eq 1)
-
-    # Clean up
-    Remove-Variable InstallVar -Scope Global
-}
-
-function Test-InstallPackageExecuteCorrectInstallScriptsAccordingToTargetFramework2 {
-    param($context)
-
-    # Arrange
-    $project = New-SilverlightApplication
-    
-    $global:InstallVar = 0
-
-    # Act
-    Install-Package TestTargetFxPSScripts -Project $project.Name -Source $context.RepositoryPath
-    
-    # Assert
-    Assert-Package $project TestTargetFxPSScripts
-    Assert-True ($global:InstallVar -eq 100)
-
-    # Clean up
-    Remove-Variable InstallVar -Scope Global
-}
-
-function Test-InstallPackageIgnoreInitScriptIfItIsNotDirectlyUnderTools {
-    param($context)
-
-    # Arrange
-    $project = New-SilverlightApplication
-    
-    $global:InitVar = 0
-
-    # Act
-    Install-Package TestTargetFxInvalidInitScript -Project $project.Name -Source $context.RepositoryPath
-    
-    # Assert
-    Assert-Package $project TestTargetFxInvalidInitScript
-    Assert-True ($global:InitVar -eq 0)
-
-    # Clean up
-    Remove-Variable InitVar -Scope Global
-}
-
-function Test-InstallPackageIgnoreInitScriptIfItIsNotDirectlyUnderTools2 {
-    param($context)
-
-    # Arrange
-    $project = New-ConsoleApplication
-    
-    $global:InitVar = 0
-
-    # Act
-    Install-Package TestTargetFxInvalidInitScript -Project $project.Name -Source $context.RepositoryPath
-    
-    # Assert
-    Assert-Package $project TestTargetFxInvalidInitScript
-    Assert-True ($global:InitVar -eq 0)
-
-    # Clean up
-    Remove-Variable InitVar -Scope Global
-}
-
-function Test-InstallPackageWithEmptyContentFrameworkFolder 
+function Test-InstallingSatellitePackageToWebsiteCopiesResourcesToBin
 {
 	param($context)
 
 	# Arrange
-	$project = New-ClassLibrary
+	$p = New-Website
 
 	# Act
-	Install-Package TestEmptyContentFolder -Project $project.Name -Source $context.RepositoryPath
+	$p | Install-Package Test.fr-FR -Source $context.RepositoryPath
 
 	# Assert
-	Assert-Package $project TestEmptyContentFolder
-	Assert-Null (Get-ProjectItem $project NewFile.txt)
-}
+	Assert-Package $p Test.fr-FR
+	Assert-Package $p Test
+	
+	$projectPath = $p.FullName
+	Assert-PathExists (Join-Path $projectPath "bin\Test.dll.refresh")
+	Assert-PathExists (Join-Path $projectPath "bin\Test.dll")
+	Assert-PathExists (Join-Path $projectPath "bin\fr-FR\Test.resources.dll")
 
-function Test-InstallPackageWithEmptyLibFrameworkFolder 
-{
-	param($context)
-
-	# Arrange
-	$project = New-ClassLibrary
-
-	# Act
-	Install-Package TestEmptyLibFolder -Project $project.Name -Source $context.RepositoryPath
-
-	# Assert
-	Assert-Package $project TestEmptyLibFolder
-	Assert-Null (Get-AssemblyReference $project one.dll)
-}
-
-function Test-InstallPackageWithEmptyToolsFrameworkFolder
-{
-	param($context)
-
-	# Arrange
-	$project = New-ClassLibrary
-
-	$global:InstallVar = 0
-
-	# Act
-	Install-Package TestEmptyToolsFolder -Project $project.Name -Source $context.RepositoryPath
-
-	# Assert
-	Assert-Package $project TestEmptyToolsFolder
-	 
-	Assert-AreEqual 0 $global:InstallVar
-
-	Remove-Variable InstallVar -Scope Global
-}
-
-function Test-InstallPackageInstallCorrectDependencyPackageBasedOnTargetFramework
-{
-	param($context)
-
-	# Arrange
-	$project = New-ClassLibrary
-
-	$global:InstallVar = 0
-
-	# Act
-	Install-Package TestDependencyTargetFramework -Project $project.Name -Source $context.RepositoryPath
-
-	# Assert
-	Assert-Package $project TestDependencyTargetFramework
-	Assert-Package $project TestEmptyLibFolder
-	Assert-NoPackage $project TestEmptyContentFolder
-	Assert-NoPackage $project TestEmptyToolsFolder
 }
